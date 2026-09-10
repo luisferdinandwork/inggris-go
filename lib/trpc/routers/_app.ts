@@ -10,6 +10,7 @@ import { programPublicRouter } from "@/app/modules/program/server/program.public
 import { blogRouter } from "@/app/modules/blog/server/blog.router";
 import { siteHeaderRouter } from "@/app/modules/site-header/server/site-header.router";
 import { footerRouter } from "@/app/modules/footer/server/footer.router";
+import { siteContentRouter } from "@/app/modules/site-content/server/site-content.router";
 import { classRouter } from "@/app/modules/class/server/class.router";
 import { sessionRouter } from "@/app/modules/class/server/session.router";
 import { scoreRouter } from "@/app/modules/class/server/score.router";
@@ -32,6 +33,7 @@ export const appRouter = createTRPCRouter({
   blog: blogRouter,
   siteHeader: siteHeaderRouter,
   footer: footerRouter,
+  siteContent: siteContentRouter,
   classes: classRouter,
   classSessions: sessionRouter,
   classScores: scoreRouter,

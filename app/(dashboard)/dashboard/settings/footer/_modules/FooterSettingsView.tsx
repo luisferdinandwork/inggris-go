@@ -26,6 +26,25 @@ import {
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { PageHeader, PageNav } from "@/components/PageHeader";
+import { RepeatableList } from "@/components/cms/CmsForm";
+
+type FooterProgramLink = { label: string; href: string };
+
+function parseProgramLinksJson(value: string | null | undefined): FooterProgramLink[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (i): i is FooterProgramLink =>
+          typeof i?.label === "string" && typeof i?.href === "string",
+      )
+      .map((i) => ({ label: i.label, href: i.href }));
+  } catch {
+    return [];
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────
    TYPES
@@ -66,7 +85,7 @@ type FormState = {
   termsLabel: string;
   locationTagline: string;
 
-  programLinksRaw: string;
+  programLinks: FooterProgramLink[];
 
   isActive: boolean;
 };
@@ -106,7 +125,7 @@ const EMPTY: FormState = {
   termsLabel: "Ketentuan",
   locationTagline: "Kampung Inggris Pare, Kediri",
 
-  programLinksRaw: "",
+  programLinks: [],
 
   isActive: true,
 };
@@ -374,6 +393,64 @@ function FooterPreview({ form }: { form: FormState }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   PROGRAM LINKS EDITOR
+───────────────────────────────────────────────────────────── */
+
+function ProgramLinksEditor({
+  value,
+  onChange,
+}: {
+  value: FooterProgramLink[];
+  onChange: (next: FooterProgramLink[]) => void;
+}) {
+  const programsQuery = trpc.siteContent.getSelectablePrograms.useQuery();
+  const options = programsQuery.data ?? [];
+
+  return (
+    <RepeatableList<FooterProgramLink>
+      items={value}
+      onChange={onChange}
+      itemLabel="Program"
+      max={5}
+      makeNew={() => ({ label: "", href: "" })}
+      renderItem={(item, update) => (
+        <>
+          {options.length > 0 && (
+            <select
+              value=""
+              onChange={(e) => {
+                const opt = options.find((o) => o.href === e.target.value);
+                if (opt) update({ label: opt.label, href: opt.href });
+              }}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-medium text-slate-700 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+            >
+              <option value="">— Pilih dari program terbit —</option>
+              {options.map((o) => (
+                <option key={o.href} value={o.href}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TextInput
+              value={item.label}
+              onChange={(v) => update({ label: v })}
+              placeholder="Label (mis. IELTS Bootcamp)"
+            />
+            <TextInput
+              value={item.href}
+              onChange={(v) => update({ href: v })}
+              placeholder="/programs/…"
+            />
+          </div>
+        </>
+      )}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    MAIN VIEW
 ───────────────────────────────────────────────────────────── */
 
@@ -432,7 +509,7 @@ export function FooterSettingsView() {
       termsLabel: nullToEmpty(d.termsLabel) || "Ketentuan",
       locationTagline: nullToEmpty(d.locationTagline),
 
-      programLinksRaw: nullToEmpty(d.programLinks),
+      programLinks: parseProgramLinksJson(d.programLinks),
 
       isActive: d.isActive,
     });
@@ -478,7 +555,12 @@ export function FooterSettingsView() {
       termsLabel: emptyToNull(form.termsLabel),
       locationTagline: emptyToNull(form.locationTagline),
 
-      programLinks: emptyToNull(form.programLinksRaw),
+      programLinks: (() => {
+        const clean = form.programLinks.filter(
+          (p) => p.label.trim() && p.href.trim(),
+        );
+        return clean.length ? JSON.stringify(clean) : null;
+      })(),
 
       isActive: form.isActive,
     });
@@ -914,15 +996,12 @@ export function FooterSettingsView() {
               </div>
 
               <Field
-                label="Program Links (JSON)"
-                description='Array JSON: [{ "label": "IELTS Bootcamp", "href": "/courses/ielts" }, ...]'
+                label="Navigasi Program"
+                description="Maksimal 5 program yang tampil di kolom footer. Pilih dari daftar program yang sudah terbit, atau isi manual."
               >
-                <TextArea
-                  value={form.programLinksRaw}
-                  onChange={(v) => set("programLinksRaw", v)}
-                  rows={5}
-                  mono
-                  placeholder={`[\n  { "label": "IELTS Bootcamp", "href": "/courses/ielts" },\n  { "label": "TOEFL Intensive", "href": "/courses/toefl" }\n]`}
+                <ProgramLinksEditor
+                  value={form.programLinks}
+                  onChange={(next) => set("programLinks", next)}
                 />
               </Field>
             </Section>

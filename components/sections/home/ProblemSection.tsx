@@ -2,92 +2,23 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+
+import { trpc } from "@/lib/trpc/client";
+import { Icon } from "@/components/Icon";
 import { BRAND, GRADIENT_GOLD_TEXT } from "@/constants/brand";
+import { DEFAULT_HOME } from "@/app/modules/site-content/site-content.defaults";
+import type { ProblemColorKey } from "@/app/modules/site-content/site-content.types";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const problems = [
-  {
-    number: "01",
-    title: "Takut Salah Grammar",
-    body: "Terlalu fokus pada kesempurnaan membuat kamu bungkam sebelum mulai bicara.",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-6 h-6"
-      >
-        <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
-        <path d="M12 8v4M12 16h.01" />
-      </svg>
-    ),
-    color: BRAND.problem.orange,
-  },
-  {
-    number: "02",
-    title: "Tidak Ada Partner Latihan",
-    body: "Tanpa lawan bicara, speaking terasa seperti latihan renang di darat — tidak ada gunanya.",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-6 h-6"
-      >
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-    color: BRAND.problem.teal,
-  },
-  {
-    number: "03",
-    title: "Bingung Harus Mulai dari Mana",
-    body: "Banyak metode, banyak aplikasi, banyak kursus — justru bikin makin stuck di titik nol.",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-6 h-6"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" />
-      </svg>
-    ),
-    color: BRAND.problem.amber,
-  },
-  {
-    number: "04",
-    title: "Kurang Percaya Diri",
-    body: "Sudah belajar bertahun-tahun, tapi saat diminta bicara — semua kata seakan lenyap begitu saja.",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-6 h-6"
-      >
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
-    ),
-    color: BRAND.problem.purple,
-  },
-];
+const COLOR_MAP: Record<ProblemColorKey, (typeof BRAND.problem)[keyof typeof BRAND.problem]> = {
+  orange: BRAND.problem.orange,
+  teal: BRAND.problem.teal,
+  amber: BRAND.problem.amber,
+  purple: BRAND.problem.purple,
+};
+
+type Card = (typeof DEFAULT_HOME.problemCards)[number];
 
 /* ── Reusable scroll-reveal wrapper ── */
 function Reveal({
@@ -124,15 +55,10 @@ function Reveal({
 }
 
 /* ── Individual problem card ── */
-function ProblemCard({
-  problem,
-  index,
-}: {
-  problem: (typeof problems)[0];
-  index: number;
-}) {
+function ProblemCard({ problem, index }: { problem: Card; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px 0px" });
+  const color = COLOR_MAP[problem.colorKey] ?? BRAND.problem.orange;
 
   return (
     <motion.div
@@ -141,19 +67,18 @@ function ProblemCard({
       animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
       transition={{ duration: 0.6, delay: index * 0.1, ease }}
       whileHover={{ y: -6, transition: { duration: 0.25, ease } }}
-      className="group relative flex flex-col rounded-3xl p-7 cursor-default"
+      className="group relative flex cursor-default flex-col rounded-3xl p-7"
       style={{
-        background: problem.color.bg,
-        border: `1.5px solid ${problem.color.border}`,
+        background: color.bg,
+        border: `1.5px solid ${color.border}`,
         backdropFilter: "blur(8px)",
       }}
     >
-      {/* Large faint number watermark */}
       <span
-        className="absolute top-4 right-5 font-display font-black select-none pointer-events-none leading-none"
+        className="pointer-events-none absolute top-4 right-5 select-none font-display font-black leading-none"
         style={{
           fontSize: "5rem",
-          color: problem.color.accent,
+          color: color.accent,
           opacity: 0.07,
           lineHeight: 1,
         }}
@@ -161,64 +86,60 @@ function ProblemCard({
         {problem.number}
       </span>
 
-      {/* Icon circle */}
       <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
-        style={{ background: problem.color.accent, color: "white" }}
+        className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110"
+        style={{ background: color.accent, color: "white" }}
       >
-        {problem.icon}
+        <Icon name={problem.icon} className="h-6 w-6" />
       </div>
 
-      {/* Number badge */}
       <span
-        className="text-xs font-display font-bold tracking-widest uppercase mb-2"
-        style={{ color: problem.color.accent, opacity: 0.7 }}
+        className="mb-2 font-display text-xs font-bold uppercase tracking-widest"
+        style={{ color: color.accent, opacity: 0.7 }}
       >
         {problem.number}
       </span>
 
-      {/* Title */}
       <h3
-        className="font-display font-bold text-xl mb-3 leading-snug"
+        className="mb-3 font-display text-xl font-bold leading-snug"
         style={{ color: "#0F2340" }}
       >
         {problem.title}
       </h3>
 
-      {/* Body */}
       <p className="text-sm leading-relaxed" style={{ color: "#64748B" }}>
         {problem.body}
       </p>
-
-      {/* Bottom accent line — grows on hover */}
-      <div
-        className="absolute bottom-0 left-6 right-6 h-0.5 rounded-full origin-left transition-all duration-500"
-        style={{
-          background: problem.color.accent,
-          opacity: 0,
-          transform: "scaleX(0)",
-        }}
-      />
-      <style>{`
-        .group:hover .accent-line-${index} {
-          opacity: 1 !important;
-          transform: scaleX(1) !important;
-        }
-      `}</style>
     </motion.div>
   );
 }
 
 export default function ProblemSection() {
   const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-100px" });
+
+  const { data } = trpc.siteContent.getHome.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const c = data && data.isActive !== false ? data : DEFAULT_HOME;
+
+  const eyebrow = c.problemEyebrow || DEFAULT_HOME.problemEyebrow;
+  const title = c.problemTitle || DEFAULT_HOME.problemTitle;
+  const titleAccent = c.problemTitleAccent ?? DEFAULT_HOME.problemTitleAccent;
+  const description = c.problemDescription || DEFAULT_HOME.problemDescription;
+  const cards =
+    c.problemCards && c.problemCards.length > 0
+      ? c.problemCards
+      : DEFAULT_HOME.problemCards;
+  const calloutText = c.problemCalloutText || DEFAULT_HOME.problemCalloutText;
+  const calloutHighlight =
+    c.problemCalloutHighlight ?? DEFAULT_HOME.problemCalloutHighlight;
+  const calloutIcon = c.problemCalloutIcon || DEFAULT_HOME.problemCalloutIcon;
 
   return (
     <section
       ref={sectionRef}
       className="relative w-full overflow-hidden bg-background py-24 lg:py-36"
     >
-      {/* Subtle background texture — two soft radial gradients */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -229,29 +150,26 @@ export default function ProblemSection() {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-12">
-        {/* ── Section header ──────────────────────────────────────── */}
-        <div className="text-center mb-16 lg:mb-20">
-          {/* Eyebrow pill */}
+      <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 lg:px-10 xl:px-12">
+        <div className="mb-16 text-center lg:mb-20">
           <Reveal>
-            <div className="inline-flex items-center gap-2 mb-6">
+            <div className="mb-6 inline-flex items-center gap-2">
               <span
-                className="px-4 py-1.5 rounded-full text-xs font-display font-bold tracking-tight uppercase"
+                className="rounded-full px-4 py-1.5 font-display text-xs font-bold uppercase tracking-tight"
                 style={{
                   background: BRAND.background,
                   color: BRAND.blueNavy,
                   border: `1px solid ${BRAND.border}`,
                 }}
               >
-                Masalah Umum
+                {eyebrow}
               </span>
             </div>
           </Reveal>
 
-          {/* Main headline — two-line, mixed color */}
           <Reveal delay={0.08}>
             <h2
-              className="font-display font-extrabold leading-[1.07] mb-6 mx-auto"
+              className="mx-auto mb-6 font-display font-extrabold leading-[1.07]"
               style={{
                 fontSize: "clamp(1rem, 4.5vw, 3rem)",
                 color: BRAND.blueNavy,
@@ -259,88 +177,72 @@ export default function ProblemSection() {
                 maxWidth: "720px",
               }}
             >
-              Mengapa Banyak Orang{" "}
-              <span style={GRADIENT_GOLD_TEXT}>
-                Tidak Pernah Berani Speaking?
-              </span>
+              {title}{" "}
+              {titleAccent && (
+                <span style={GRADIENT_GOLD_TEXT}>{titleAccent}</span>
+              )}
             </h2>
           </Reveal>
 
-          {/* Subtext */}
           <Reveal delay={0.16}>
             <p
-              className="text-lg leading-relaxed mx-auto"
+              className="mx-auto text-lg leading-relaxed"
               style={{ color: BRAND.textMuted, maxWidth: "520px" }}
             >
-              Banyak orang sudah belajar bahasa Inggris bertahun-tahun tetapi
-              masih merasa takut berbicara.
+              {description}
             </p>
           </Reveal>
         </div>
 
-        {/* ── Problem cards grid ──────────────────────────────────── */}
-        {/*
-         * Responsive:
-         *   mobile  → 1 column
-         *   sm(640) → 2 columns
-         *   lg(1024)→ 4 columns
-         */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
-          {problems.map((p, i) => (
-            <ProblemCard key={p.number} problem={p} index={i} />
+        <div className="mb-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {cards.map((p, i) => (
+            <ProblemCard key={`${p.number}-${i}`} problem={p} index={i} />
           ))}
         </div>
 
-        {/* ── Bottom callout banner ───────────────────────────────── */}
-        <Reveal delay={0.1}>
-          <div
-            className="relative overflow-hidden rounded-3xl px-8 py-6 flex flex-col sm:flex-row items-center justify-center gap-4 text-center sm:text-left"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(45,184,176,0.08) 0%, rgba(45,184,176,0.14) 100%)",
-              border: "1.5px solid rgba(45,184,176,0.2)",
-            }}
-          >
-            {/* Decorative blurred circle */}
+        {calloutText && (
+          <Reveal delay={0.1}>
             <div
-              aria-hidden
-              className="pointer-events-none absolute -right-8 -top-8 w-40 h-40 rounded-full"
+              className="relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl px-8 py-6 text-center sm:flex-row sm:text-left"
               style={{
-                background: "rgba(45,184,176,0.12)",
-                filter: "blur(32px)",
+                background:
+                  "linear-gradient(135deg, rgba(45,184,176,0.08) 0%, rgba(45,184,176,0.14) 100%)",
+                border: "1.5px solid rgba(45,184,176,0.2)",
               }}
-            />
-
-            {/* Lightbulb icon */}
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(45,184,176,0.15)", color: "#2DB8B0" }}
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-6 h-6"
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full"
+                style={{
+                  background: "rgba(45,184,176,0.12)",
+                  filter: "blur(32px)",
+                }}
+              />
+
+              <div
+                className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl"
+                style={{ background: "rgba(45,184,176,0.15)", color: "#2DB8B0" }}
               >
-                <path d="M9 21h6M12 3a6 6 0 0 1 6 6c0 2.22-1.206 4.16-3 5.197V17a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1v-2.803C7.206 13.16 6 11.22 6 9a6 6 0 0 1 6-6z" />
-              </svg>
-            </div>
+                <Icon name={calloutIcon} className="h-6 w-6" />
+              </div>
 
-            {/* Text */}
-            <p
-              className="text-base sm:text-lg font-medium relative z-10"
-              style={{ color: BRAND.blueNavy }}
-            >
-              Belajar bahasa Inggris seharusnya{" "}
-              <span className="font-bold" style={{ color: BRAND.goldVivid }}>
-                tidak membuat kamu merasa takut!
-              </span>
-            </p>
-          </div>
-        </Reveal>
+              <p
+                className="relative z-10 text-base font-medium sm:text-lg"
+                style={{ color: BRAND.blueNavy }}
+              >
+                {calloutText}{" "}
+                {calloutHighlight && (
+                  <span
+                    className="font-bold"
+                    style={{ color: BRAND.goldVivid }}
+                  >
+                    {calloutHighlight}
+                  </span>
+                )}
+              </p>
+            </div>
+          </Reveal>
+        )}
       </div>
     </section>
   );

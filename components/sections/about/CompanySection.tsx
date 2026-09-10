@@ -1,22 +1,43 @@
-import Reveal from "@/components/ui/Reveal";
-import { SOCIAL_PROOF } from "@/constants";
-import { BRAND } from "@/constants/brand";
-import { Award, MapPin, Users } from "lucide-react";
-import Image from "next/image";
-import React from "react";
+"use client";
 
-const chips = [
-  { icon: MapPin, text: "Kampung Inggris Pare, Kediri" },
-  { icon: Users, text: `${SOCIAL_PROOF.totalStudents}+ alumni` },
-  { icon: Award, text: "Tutor berpengalaman" },
-];
+import Image from "next/image";
+
+import Reveal from "@/components/ui/Reveal";
+import { Icon } from "@/components/Icon";
+import { trpc } from "@/lib/trpc/client";
+import { BRAND } from "@/constants/brand";
+import { DEFAULT_ABOUT } from "@/app/modules/site-content/site-content.defaults";
 
 export const CompanySection = () => {
+  const { data } = trpc.siteContent.getAbout.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const c = data && data.isActive !== false ? data : DEFAULT_ABOUT;
+
+  const eyebrow = c.whoEyebrow || DEFAULT_ABOUT.whoEyebrow;
+  const title = c.whoTitle || DEFAULT_ABOUT.whoTitle;
+  const paragraphs =
+    c.whoParagraphs && c.whoParagraphs.length > 0
+      ? c.whoParagraphs
+      : DEFAULT_ABOUT.whoParagraphs;
+  const tags =
+    c.whoTags && c.whoTags.length > 0 ? c.whoTags : DEFAULT_ABOUT.whoTags;
+  const imageUrl = c.whoImageUrl || DEFAULT_ABOUT.whoImageUrl;
+  const filosofiQuote = c.whoFilosofiQuote || DEFAULT_ABOUT.whoFilosofiQuote;
+  const filosofiDescription =
+    c.whoFilosofiDescription || DEFAULT_ABOUT.whoFilosofiDescription;
+  const founderName = c.whoFounderName || DEFAULT_ABOUT.whoFounderName;
+  const founderRole = c.whoFounderRole || DEFAULT_ABOUT.whoFounderRole;
+  const founderInitials =
+    c.whoFounderInitials || DEFAULT_ABOUT.whoFounderInitials;
+  const founderImageUrl = c.whoFounderImageUrl ?? "";
+  const locationLine = c.whoLocationLine || DEFAULT_ABOUT.whoLocationLine;
+
   return (
     <section className="py-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-stretch">
-          {/* ── LEFT: text content ── */}
+          {/* ── LEFT ── */}
           <Reveal>
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-2 mb-5">
@@ -33,7 +54,7 @@ export const CompanySection = () => {
                     color: "#94A3B8",
                   }}
                 >
-                  Profil Perusahaan
+                  {eyebrow}
                 </span>
               </div>
 
@@ -45,7 +66,7 @@ export const CompanySection = () => {
                   color: BRAND.blueNavy,
                 }}
               >
-                Siapa Kami?
+                {title}
               </h2>
 
               <div
@@ -56,31 +77,15 @@ export const CompanySection = () => {
                   lineHeight: "1.75",
                 }}
               >
-                <p>
-                  <strong style={{ color: BRAND.blueNavy }}>Inggris Go</strong>{" "}
-                  adalah lembaga belajar bahasa Inggris berbasis di Kampung
-                  Inggris Pare, Kediri — pusat bahasa Inggris terbesar di
-                  Indonesia. Kami didirikan dengan satu keyakinan: rasa takut
-                  salah ngomong adalah hambatan terbesar, bukan kemampuan.
-                </p>
-                <p>
-                  Kami menyediakan program online yang terjangkau untuk pemula,
-                  kelas intensif dengan kelas kecil untuk hasil maksimal,
-                  program camp di Pare untuk pengalaman imersif, hingga program
-                  khusus untuk sekolah dan pesantren di seluruh Indonesia.
-                </p>
-                <p>
-                  Dengan tim tutor berpengalaman dan metode yang berfokus pada
-                  speaking aktif sejak hari pertama, siswa telah membuktikan
-                  bahwa bahasa Inggris bukan sesuatu yang sulit — hanya butuh
-                  tempat yang tepat untuk berlatih.
-                </p>
+                {paragraphs.map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
               </div>
 
               <div className="mt-8 flex flex-wrap gap-2.5">
-                {chips.map((item) => (
+                {tags.map((tag) => (
                   <div
-                    key={item.text}
+                    key={tag.text}
                     className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl"
                     style={{
                       background: BRAND.background,
@@ -89,18 +94,19 @@ export const CompanySection = () => {
                       color: BRAND.blueNavy,
                     }}
                   >
-                    <item.icon
+                    <Icon
+                      name={tag.icon}
                       className="w-3.5 h-3.5 flex-shrink-0"
                       style={{ color: BRAND.blueNavy }}
                     />
-                    {item.text}
+                    {tag.text}
                   </div>
                 ))}
               </div>
             </div>
           </Reveal>
 
-          {/* ── RIGHT: brand identity card ── */}
+          {/* ── RIGHT ── */}
           <Reveal delay={0.12}>
             <div
               className="relative rounded-3xl overflow-hidden flex flex-col"
@@ -111,7 +117,6 @@ export const CompanySection = () => {
                 minHeight: "460px",
               }}
             >
-              {/* Dot grid */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
@@ -121,7 +126,6 @@ export const CompanySection = () => {
                 }}
               />
 
-              {/* Orange glow — bottom right */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute"
@@ -136,8 +140,6 @@ export const CompanySection = () => {
                   filter: "blur(30px)",
                 }}
               />
-
-              {/* Teal glow — top left */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute"
@@ -153,40 +155,9 @@ export const CompanySection = () => {
                 }}
               />
 
-              {/* Decorative rings behind logo */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute"
-                style={{
-                  top: "44%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "300px",
-                  height: "300px",
-                  borderRadius: "50%",
-                  border: "1px solid rgba(255,255,255,0.045)",
-                }}
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute"
-                style={{
-                  top: "44%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "220px",
-                  height: "220px",
-                  borderRadius: "50%",
-                  border: "1px solid rgba(255,255,255,0.035)",
-                }}
-              />
-
-              {/* Content */}
               <div className="relative z-10 flex flex-col flex-1 px-8 py-10 lg:px-10">
-                {/* Logo — centered, takes all available space above divider */}
                 <div className="flex-1 flex items-center justify-center py-6">
                   <div className="relative">
-                    {/* Halo */}
                     <div
                       aria-hidden
                       style={{
@@ -199,7 +170,7 @@ export const CompanySection = () => {
                       }}
                     />
                     <Image
-                      src="/logo.png"
+                      src={imageUrl}
                       alt="Inggris Go"
                       width={220}
                       height={220}
@@ -214,7 +185,6 @@ export const CompanySection = () => {
                   </div>
                 </div>
 
-                {/* Divider */}
                 <div
                   style={{
                     height: "1px",
@@ -223,7 +193,6 @@ export const CompanySection = () => {
                   }}
                 />
 
-                {/* Quote */}
                 <div className="mb-5">
                   <p
                     className="font-display font-extrabold text-white mb-2"
@@ -233,7 +202,7 @@ export const CompanySection = () => {
                       lineHeight: "1.35",
                     }}
                   >
-                    "Speak First, Perfect Later."
+                    &ldquo;{filosofiQuote}&rdquo;
                   </p>
 
                   <p
@@ -243,26 +212,35 @@ export const CompanySection = () => {
                       lineHeight: "1.6",
                     }}
                   >
-                    Filosofi kami — mulailah berbicara dari hari pertama.
-                    Kesempurnaan datang seiring latihan.
+                    {filosofiDescription}
                   </p>
 
-                  <p
-                    className="mt-3 leading-snug"
-                    style={{
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    <span className="block text-white/70">
-                      — Nina Rokhmawati, S.Pd
-                    </span>
-                    <span className="block text-white/30">
-                      CEO & Founder · Inggris Go
-                    </span>
-                  </p>
+                  <div className="mt-3 flex items-center gap-2.5">
+                    {founderImageUrl ? (
+                      <Image
+                        src={founderImageUrl}
+                        alt={founderName}
+                        width={32}
+                        height={32}
+                        className="size-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="flex size-8 items-center justify-center rounded-full text-[10px] font-black text-white"
+                        style={{ background: "#1B4FDB" }}
+                      >
+                        {founderInitials}
+                      </div>
+                    )}
+                    <p className="leading-snug" style={{ fontSize: "0.75rem" }}>
+                      <span className="block text-white/70">
+                        — {founderName}
+                      </span>
+                      <span className="block text-white/30">{founderRole}</span>
+                    </p>
+                  </div>
                 </div>
 
-                {/* Location line — minimal footer, no stats */}
                 <div
                   className="flex items-center gap-2"
                   style={{
@@ -287,7 +265,7 @@ export const CompanySection = () => {
                       letterSpacing: "0.03em",
                     }}
                   >
-                    Kampung Inggris Pare, Kediri · Indonesia
+                    {locationLine}
                   </p>
                 </div>
               </div>
@@ -298,3 +276,5 @@ export const CompanySection = () => {
     </section>
   );
 };
+
+export default CompanySection;

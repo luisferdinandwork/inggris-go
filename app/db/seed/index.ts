@@ -7,6 +7,10 @@ import { seedRoles, seedUserRoles, seedUsers } from "./users.seed";
 import { seedAllBlog } from "./blog.seed";
 import { seedSiteHeaderSettings } from "./site-header.seed";
 import { seedFooterSettings } from "./site-footer.seed";
+import { seedHomePageSettings } from "./home-page.seed";
+import { seedAboutPageSettings } from "./about-page.seed";
+import { seedContactPageSettings } from "./contact-page.seed";
+import { seedSiteCtaSettings } from "./site-cta.seed";
 
 async function main() {
   console.log("🌱 Seeding...\n");
@@ -20,6 +24,10 @@ async function main() {
     // ── Site Header / Layout CMS ───────────────────────────────────────────────
     await seedSiteHeaderSettings();
     await seedFooterSettings();
+    await seedHomePageSettings();
+    await seedAboutPageSettings();
+    await seedContactPageSettings();
+    await seedSiteCtaSettings();
 
     // ── Programs ───────────────────────────────────────────────────────────────
     await seedCategories();

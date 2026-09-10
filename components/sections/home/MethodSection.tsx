@@ -2,109 +2,24 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+
+import { trpc } from "@/lib/trpc/client";
+import { Icon } from "@/components/Icon";
 import { BRAND, GRADIENT_GOLD_TEXT } from "@/constants/brand";
-import { SOCIAL_PROOF } from "@/constants";
+import { DEFAULT_HOME } from "@/app/modules/site-content/site-content.defaults";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const steps = [
-  {
-    num: "1",
-    title: "Understand",
-    subtitle: "Pahami Dasarnya",
-    body: "Memahami kalimat sederhana dan struktur dasar bahasa Inggris dengan metode yang mudah dicerna.",
-    tags: ["Kosakata dasar", "Pola kalimat", "Listening"],
-    squareBg: BRAND.gradientBlue,
-    accentBg: BRAND.gradientNavy,
-    rotate: "-6deg",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="white"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-4 h-4"
-      >
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
-  {
-    num: "2",
-    title: "Imitate",
-    subtitle: "Tiru & Rasakan",
-    body: "Meniru cara bicara tutor berpengalaman — intonasi, ritme, dan ekspresi yang natural.",
-    tags: ["Shadowing", "Pronunciation", "Intonasi"],
-    squareBg: BRAND.gradientGold,
-    accentBg: BRAND.gradientBlue,
-    rotate: "5deg",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="white"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-4 h-4"
-      >
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-      </svg>
-    ),
-  },
-  {
-    num: "3",
-    title: "Practice",
-    subtitle: "Latihan Rutin",
-    body: "Latihan berbicara secara konsisten dengan feedback langsung dari tutor yang supportif.",
-    tags: ["Feedback tutor", "Speaking drill", "Koreksi langsung"],
-    squareBg: BRAND.gradientNavy,
-    accentBg: BRAND.gradientGold,
-    rotate: "-4deg",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="white"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-4 h-4"
-      >
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <path d="M12 8v8M8 12h8" />
-      </svg>
-    ),
-  },
-  {
-    num: "4",
-    title: "Speak",
-    subtitle: "Berani Bicara!",
-    body: "Gunakan bahasa Inggris dengan percaya diri di situasi nyata — tanpa rasa takut salah.",
-    tags: ["Percaya diri", "Situasi nyata", "No fear!"],
-    squareBg: BRAND.gradientBlue,
-    accentBg: BRAND.gradientNavy,
-    rotate: "6deg",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="white"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-4 h-4"
-      >
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" />
-      </svg>
-    ),
-  },
+type Step = (typeof DEFAULT_HOME.methodSteps)[number];
+
+/** Per-index visual treatment (not CMS-managed — keeps the zig-zag look). */
+const STYLES = [
+  { squareBg: BRAND.gradientBlue, accentBg: BRAND.gradientNavy, rotate: "-6deg" },
+  { squareBg: BRAND.gradientGold, accentBg: BRAND.gradientBlue, rotate: "5deg" },
+  { squareBg: BRAND.gradientNavy, accentBg: BRAND.gradientGold, rotate: "-4deg" },
+  { squareBg: BRAND.gradientBlue, accentBg: BRAND.gradientNavy, rotate: "6deg" },
 ];
+const styleFor = (i: number) => STYLES[i % STYLES.length];
 
 function Reveal({
   children,
@@ -130,15 +45,10 @@ function Reveal({
   );
 }
 
-function DesktopStepCard({
-  step,
-  index,
-}: {
-  step: (typeof steps)[0];
-  index: number;
-}) {
+function DesktopStepCard({ step, index }: { step: Step; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px 0px" });
+  const s = styleFor(index);
 
   return (
     <motion.div
@@ -146,11 +56,11 @@ function DesktopStepCard({
       initial={{ opacity: 0, y: 36 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay: index * 0.12, ease }}
-      className="group flex flex-col items-center text-center flex-1 min-w-0 cursor-default"
+      className="group flex min-w-0 flex-1 cursor-default flex-col items-center text-center"
     >
       <div className="relative mb-5" style={{ width: "88px", height: "88px" }}>
         <motion.div
-          className="group-hover:scale-105 transition-all duration-300"
+          className="transition-all duration-300 group-hover:scale-105"
           style={{
             position: "absolute",
             top: 0,
@@ -158,83 +68,57 @@ function DesktopStepCard({
             width: "76px",
             height: "76px",
             borderRadius: "20px",
-            background: step.squareBg,
-            transform: `rotate(${step.rotate})`,
+            background: s.squareBg,
+            transform: `rotate(${s.rotate})`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             boxShadow: BRAND.shadowBlueBtn,
-            transition:
-              "transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease",
           }}
         >
           <span
-            className="font-display font-black text-white select-none"
-            style={{
-              fontSize: "2rem",
-              lineHeight: 1,
-              letterSpacing: "-0.03em",
-            }}
+            className="select-none font-display font-black text-white"
+            style={{ fontSize: "2rem", lineHeight: 1, letterSpacing: "-0.03em" }}
           >
             {step.num}
           </span>
         </motion.div>
 
         <div
-          className="
-            absolute bottom-0 right-0 z-10
-            flex items-center justify-center
-            transition-transform duration-300 ease-out
-            group-hover:-translate-y-2 group-hover:scale-110
-          "
+          className="absolute bottom-0 right-0 z-10 flex items-center justify-center text-white transition-transform duration-300 ease-out group-hover:-translate-y-2 group-hover:scale-110"
           style={{
             width: "32px",
             height: "32px",
             borderRadius: "10px",
-            background: step.accentBg,
+            background: s.accentBg,
             boxShadow: BRAND.shadowBlueBtn,
           }}
         >
-          {step.icon}
+          <Icon name={step.icon} className="h-4 w-4" />
         </div>
       </div>
 
       <span
-        className="font-display font-semibold mb-1 transition-colors duration-200"
+        className="mb-1 font-display font-semibold uppercase transition-colors duration-200"
         style={{
           fontSize: "0.6875rem",
           letterSpacing: "0.08em",
           color: BRAND.textFaint,
-          textTransform: "uppercase",
         }}
       >
         {step.subtitle}
       </span>
 
       <h3
-        className="font-display font-bold mb-2 leading-snug transition-colors duration-200"
-        style={{
-          fontSize: "1.0625rem",
-          color: BRAND.blueNavy,
-          transition: "color 0.2s",
-        }}
-        onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLElement).style.color = BRAND.goldVivid)
-        }
-        onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLElement).style.color = BRAND.blueNavy)
-        }
+        className="mb-2 font-display font-bold leading-snug transition-colors duration-200"
+        style={{ fontSize: "1.0625rem", color: BRAND.blueNavy }}
       >
         {step.title}
       </h3>
 
       <p
-        className="leading-relaxed mb-4"
-        style={{
-          fontSize: "0.8125rem",
-          color: BRAND.textMuted,
-          maxWidth: "176px",
-        }}
+        className="mb-4 leading-relaxed"
+        style={{ fontSize: "0.8125rem", color: BRAND.textMuted, maxWidth: "176px" }}
       >
         {step.body}
       </p>
@@ -243,8 +127,7 @@ function DesktopStepCard({
         {step.tags.map((tag) => (
           <span
             key={tag}
-            className="px-2.5 py-1 rounded-full font-medium transition-all duration-200
-              opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"
+            className="translate-y-2 rounded-full px-2.5 py-1 font-medium opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100"
             style={{
               fontSize: "0.6875rem",
               background: BRAND.overlayGoldIcon,
@@ -266,12 +149,13 @@ function MobileStep({
   index,
   isLast,
 }: {
-  step: (typeof steps)[0];
+  step: Step;
   index: number;
   isLast: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-50px 0px" });
+  const s = styleFor(index);
 
   return (
     <motion.div
@@ -281,52 +165,44 @@ function MobileStep({
       transition={{ duration: 0.55, delay: index * 0.1, ease }}
       className="group relative flex gap-5"
     >
-      <div className="flex flex-col items-center flex-shrink-0">
+      <div className="flex flex-shrink-0 flex-col items-center">
         <div className="relative" style={{ width: "68px", height: "68px" }}>
           <div
-            className="absolute top-0 left-0 flex items-center justify-center
-              group-hover:scale-105 transition-transform duration-300"
+            className="absolute top-0 left-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
             style={{
               width: "58px",
               height: "58px",
               borderRadius: "16px",
-              background: step.squareBg,
-              transform: `rotate(${step.rotate})`,
+              background: s.squareBg,
+              transform: `rotate(${s.rotate})`,
               boxShadow: BRAND.shadowBlueBtn,
-              transition:
-                "transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease",
             }}
           >
             <span
-              className="font-display font-black text-white select-none"
-              style={{
-                fontSize: "1.5rem",
-                lineHeight: 1,
-                letterSpacing: "-0.03em",
-              }}
+              className="select-none font-display font-black text-white"
+              style={{ fontSize: "1.5rem", lineHeight: 1, letterSpacing: "-0.03em" }}
             >
               {step.num}
             </span>
           </div>
 
           <div
-            className="absolute bottom-0 right-0 z-10 flex items-center justify-center
-              group-hover:-translate-y-1.5 group-hover:scale-110 transition-transform duration-300"
+            className="absolute bottom-0 right-0 z-10 flex items-center justify-center text-white transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:scale-110"
             style={{
               width: "26px",
               height: "26px",
               borderRadius: "8px",
-              background: step.accentBg,
+              background: s.accentBg,
               boxShadow: BRAND.shadowBlueBtn,
             }}
           >
-            {step.icon}
+            <Icon name={step.icon} className="h-3.5 w-3.5" />
           </div>
         </div>
 
         {!isLast && (
           <div
-            className="mt-3 flex-1 flex flex-col items-center"
+            className="mt-3 flex flex-1 flex-col items-center"
             style={{ minHeight: "40px" }}
           >
             <motion.div
@@ -344,28 +220,27 @@ function MobileStep({
         )}
       </div>
 
-      <div className="pb-10 flex-1 pt-1">
+      <div className="flex-1 pb-10 pt-1">
         <span
-          className="font-display font-semibold block mb-1"
+          className="mb-1 block font-display font-semibold uppercase"
           style={{
             fontSize: "0.6875rem",
             letterSpacing: "0.08em",
             color: BRAND.textFaint,
-            textTransform: "uppercase",
           }}
         >
           Langkah {step.num} · {step.subtitle}
         </span>
 
         <h3
-          className="font-display font-bold mb-2 leading-snug transition-colors duration-200"
+          className="mb-2 font-display font-bold leading-snug transition-colors duration-200"
           style={{ fontSize: "1.0625rem", color: BRAND.blueNavy }}
         >
           {step.title}
         </h3>
 
         <p
-          className="leading-relaxed mb-3"
+          className="mb-3 leading-relaxed"
           style={{ fontSize: "0.8125rem", color: BRAND.textMuted }}
         >
           {step.body}
@@ -375,7 +250,7 @@ function MobileStep({
           {step.tags.map((tag) => (
             <span
               key={tag}
-              className="px-2.5 py-1 rounded-full font-medium"
+              className="rounded-full px-2.5 py-1 font-medium"
               style={{
                 fontSize: "0.6875rem",
                 background: BRAND.overlayGoldIcon,
@@ -393,8 +268,26 @@ function MobileStep({
 }
 
 export default function MethodSection() {
+  const { data } = trpc.siteContent.getHome.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const c = data && data.isActive !== false ? data : DEFAULT_HOME;
+
+  const eyebrow = c.methodEyebrow || DEFAULT_HOME.methodEyebrow;
+  const title = c.methodTitle || DEFAULT_HOME.methodTitle;
+  const titleAccent = c.methodTitleAccent ?? DEFAULT_HOME.methodTitleAccent;
+  const description = c.methodDescription || DEFAULT_HOME.methodDescription;
+  const steps =
+    c.methodSteps && c.methodSteps.length > 0
+      ? c.methodSteps
+      : DEFAULT_HOME.methodSteps;
+  const fnPrefix = c.methodFootnotePrefix ?? DEFAULT_HOME.methodFootnotePrefix;
+  const fnHighlight =
+    c.methodFootnoteHighlight ?? DEFAULT_HOME.methodFootnoteHighlight;
+  const fnSuffix = c.methodFootnoteSuffix ?? DEFAULT_HOME.methodFootnoteSuffix;
+
   return (
-    <section className="relative w-full overflow-hidden py-20 lg:py-28 bg-background">
+    <section className="relative w-full overflow-hidden bg-background py-20 lg:py-28">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -405,41 +298,36 @@ export default function MethodSection() {
         }}
       />
 
-      <style>{`
-        .group:hover .step-large-square {
-          transform: rotate(0deg) !important;
-          box-shadow: var(--shadow-glow-blue-btn-hover) !important;
-        }
-      `}</style>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-12">
-        {/* Header */}
-        <div className="flex flex-col items-center text-center mb-14 lg:mb-20">
+      <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 lg:px-10 xl:px-12">
+        <div className="mb-14 flex flex-col items-center text-center lg:mb-20">
           <Reveal>
-            <div className="inline-flex items-center gap-2 mb-6">
+            <div className="mb-6 inline-flex items-center gap-2">
               <span
-                className="px-4 py-1.5 rounded-full text-xs font-display font-bold tracking-tight uppercase"
+                className="rounded-full px-4 py-1.5 font-display text-xs font-bold uppercase tracking-tight"
                 style={{
                   background: BRAND.background,
                   color: BRAND.blueNavy,
                   border: `1px solid ${BRAND.border}`,
                 }}
               >
-                Metode kami
+                {eyebrow}
               </span>
             </div>
           </Reveal>
 
           <Reveal delay={0.08}>
             <h2
-              className="font-display font-extrabold leading-[1.08] mb-4"
+              className="mb-4 font-display font-extrabold leading-[1.08]"
               style={{
                 fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)",
                 letterSpacing: "-0.022em",
                 color: BRAND.blueNavy,
               }}
             >
-              Metode Belajar <span style={GRADIENT_GOLD_TEXT}>Inggris Go</span>
+              {title}{" "}
+              {titleAccent && (
+                <span style={GRADIENT_GOLD_TEXT}>{titleAccent}</span>
+              )}
             </h2>
           </Reveal>
 
@@ -452,21 +340,18 @@ export default function MethodSection() {
                 maxWidth: "420px",
               }}
             >
-              4 langkah sederhana untuk berbicara bahasa Inggris dengan percaya
-              diri
+              {description}
             </p>
           </Reveal>
         </div>
 
-        {/* Desktop */}
-        <div className="hidden lg:flex items-start justify-center gap-0">
+        <div className="hidden items-start justify-center gap-0 lg:flex">
           {steps.map((step, i) => (
-            <div key={step.num} className="flex items-start">
+            <div key={`${step.num}-${i}`} className="flex items-start">
               <DesktopStepCard step={step} index={i} />
-
               {i < steps.length - 1 && (
                 <div
-                  className="flex-shrink-0 flex items-start justify-center"
+                  className="flex flex-shrink-0 items-start justify-center"
                   style={{ paddingTop: "36px", width: "56px" }}
                 >
                   <div
@@ -483,11 +368,10 @@ export default function MethodSection() {
           ))}
         </div>
 
-        {/* Mobile */}
-        <div className="lg:hidden max-w-sm mx-auto">
+        <div className="mx-auto max-w-sm lg:hidden">
           {steps.map((step, i) => (
             <MobileStep
-              key={step.num}
+              key={`${step.num}-${i}`}
               step={step}
               index={i}
               isLast={i === steps.length - 1}
@@ -495,37 +379,38 @@ export default function MethodSection() {
           ))}
         </div>
 
-        {/* Bottom note */}
-        <Reveal delay={0.1} className="mt-14 lg:mt-16">
-          <div className="flex items-center justify-center gap-2.5">
-            <div
-              style={{
-                width: "32px",
-                height: "1px",
-                background: BRAND.gradientGold,
-                borderRadius: "1px",
-              }}
-            />
-            <p
-              className="font-display font-medium text-center"
-              style={{ fontSize: "0.8125rem", color: BRAND.textFaint }}
-            >
-              Sudah terbukti membantu{" "}
-              <span style={{ color: BRAND.goldVivid, fontWeight: 700 }}>
-                {SOCIAL_PROOF.totalStudents}+
-              </span>{" "}
-              siswa dari nol jadi berani speaking
-            </p>
-            <div
-              style={{
-                width: "32px",
-                height: "1px",
-                background: BRAND.gradientGold,
-                borderRadius: "1px",
-              }}
-            />
-          </div>
-        </Reveal>
+        {(fnPrefix || fnHighlight || fnSuffix) && (
+          <Reveal delay={0.1} className="mt-14 lg:mt-16">
+            <div className="flex items-center justify-center gap-2.5">
+              <div
+                style={{
+                  width: "32px",
+                  height: "1px",
+                  background: BRAND.gradientGold,
+                  borderRadius: "1px",
+                }}
+              />
+              <p
+                className="text-center font-display font-medium"
+                style={{ fontSize: "0.8125rem", color: BRAND.textFaint }}
+              >
+                {fnPrefix}{" "}
+                <span style={{ color: BRAND.goldVivid, fontWeight: 700 }}>
+                  {fnHighlight}
+                </span>{" "}
+                {fnSuffix}
+              </p>
+              <div
+                style={{
+                  width: "32px",
+                  height: "1px",
+                  background: BRAND.gradientGold,
+                  borderRadius: "1px",
+                }}
+              />
+            </div>
+          </Reveal>
+        )}
       </div>
     </section>
   );

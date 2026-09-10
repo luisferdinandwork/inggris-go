@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { motion, useInView, type Variants } from "framer-motion";
 
 type Direction = "up" | "left" | "right" | "none";
@@ -50,7 +50,10 @@ export default function Reveal({
   type = "slide",
   as: Comp = "div",
 }: RevealProps) {
-  const MotionComp = motion(Comp);
+  // motion(Comp) creates a new component type on every call — memoize it so
+  // parent re-renders (e.g. from a resolving tRPC query) don't remount the
+  // motion node and restart / freeze the entrance animation mid-way.
+  const MotionComp = useMemo(() => motion(Comp), [Comp]);
   const ref = useRef<Element | null>(null);
   const inView = useInView(ref, {
     once,

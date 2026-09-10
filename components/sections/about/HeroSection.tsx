@@ -1,52 +1,39 @@
 "use client";
 
 import Reveal from "@/components/ui/Reveal";
-import { SOCIAL_PROOF } from "@/constants";
+import { trpc } from "@/lib/trpc/client";
 import { BRAND, GRADIENT_GOLD_TEXT } from "@/constants/brand";
+import { DEFAULT_ABOUT } from "@/app/modules/site-content/site-content.defaults";
+import type {
+  HeroStatLabel,
+  SiteStats,
+  TeamMember,
+} from "@/app/modules/site-content/site-content.types";
 import { motion, useReducedMotion } from "framer-motion";
-import { MapPin, Users, Star, BookOpen } from "lucide-react";
+import { BookOpen, MapPin, Star, Users } from "lucide-react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const teamAvatars = [
-  {
-    initials: "NR",
-    bg: "#1B4FDB",
-    name: "Nina Rokhmawati, S.Pd",
-    role: "CEO & Founder",
-  },
-  {
-    initials: "MA",
-    bg: "#0D9488",
-    name: "Marissa",
-    role: "Head of Education",
-  },
-  {
-    initials: "ES",
-    bg: "#E8521C",
-    name: "Escolastico",
-    role: "Head of Marketing",
-  },
-  {
-    initials: "DV",
-    bg: "#7C3AED",
-    name: "Devi",
-    role: "Finance Manager",
-  },
-  { initials: "HN", bg: "#0EA5E9", name: "Hana", role: "Creative Lead" },
-];
+const STAT_META: Record<
+  HeroStatLabel["key"],
+  { Icon: React.ElementType; accent: string }
+> = {
+  alumni: { Icon: Users, accent: BRAND.blue },
+  years: { Icon: Star, accent: "#F59E0B" },
+  programs: { Icon: BookOpen, accent: "#0D9488" },
+  rating: { Icon: Star, accent: "#F59E0B" },
+};
 
-const stats = [
-  {
-    value: `${SOCIAL_PROOF.activeStudents}+`,
-    label: "Siswa Aktif",
-    Icon: Users,
-    accent: BRAND.blue,
-  },
-  { value: "5+", label: "Tahun Berdiri", Icon: Star, accent: "#F59E0B" },
-  { value: "4", label: "Jenis Program", Icon: BookOpen, accent: "#0D9488" },
-];
+const AVATAR_BG = ["#1B4FDB", "#0D9488", "#E8521C", "#7C3AED", "#0EA5E9"];
 
+function statValue(key: HeroStatLabel["key"], s: SiteStats): string {
+  if (key === "alumni") return `${s.alumni.toLocaleString("en-US")}+`;
+  if (key === "years") return `${s.years}+`;
+  if (key === "rating") return `${s.rating}`;
+  return `${s.programs}`;
+}
+
+/* ── LEFT / RIGHT decorations (unchanged) ── */
 function LeftDecor({ reduced }: { reduced: boolean | null }) {
   return (
     <div
@@ -60,7 +47,6 @@ function LeftDecor({ reduced }: { reduced: boolean | null }) {
         zIndex: 0,
       }}
     >
-      {/* Dot grid */}
       <svg
         viewBox="0 0 110 140"
         fill="none"
@@ -79,8 +65,6 @@ function LeftDecor({ reduced }: { reduced: boolean | null }) {
           )),
         )}
       </svg>
-
-      {/* Animated arc */}
       <motion.svg
         viewBox="0 0 120 120"
         fill="none"
@@ -101,75 +85,7 @@ function LeftDecor({ reduced }: { reduced: boolean | null }) {
           animate={{ pathLength: 1 }}
           transition={{ duration: 1.6, delay: 0.5, ease }}
         />
-        {/* Second inner arc */}
-        <motion.path
-          d="M 80 12 A 70 70 0 0 0 12 80"
-          stroke={BRAND.blueNavy}
-          strokeWidth="1"
-          strokeLinecap="round"
-          strokeOpacity="0.1"
-          strokeDasharray="5 8"
-          fill="none"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.8, delay: 0.7, ease }}
-        />
       </motion.svg>
-
-      {/* Large diamond outline */}
-      <motion.div
-        className="absolute"
-        style={{
-          bottom: 80,
-          left: 24,
-          width: 44,
-          height: 44,
-          border: `2px solid ${BRAND.blueNavy}`,
-          borderRadius: 5,
-          opacity: 0.18,
-        }}
-        initial={{ opacity: 0, rotate: 20, scale: 0.6 }}
-        animate={{ opacity: 0.18, rotate: 45, scale: 1 }}
-        transition={{ duration: 0.7, delay: 0.75, ease }}
-      />
-      {/* Small filled diamond */}
-      <motion.div
-        className="absolute"
-        style={{
-          bottom: 66,
-          left: 14,
-          width: 12,
-          height: 12,
-          background: BRAND.blue,
-          borderRadius: 2,
-          opacity: 0.25,
-        }}
-        initial={{ opacity: 0, scale: 0, rotate: 0 }}
-        animate={{ opacity: 0.25, scale: 1, rotate: 45 }}
-        transition={{ duration: 0.5, delay: 0.9, ease }}
-      />
-
-      {/* Vertical dashed line */}
-      <svg
-        viewBox="0 0 4 100"
-        fill="none"
-        className="absolute"
-        style={{ top: 200, left: 6, width: 4, height: 100 }}
-      >
-        <line
-          x1="2"
-          y1="0"
-          x2="2"
-          y2="100"
-          stroke={BRAND.blueNavy}
-          strokeWidth="1.5"
-          strokeDasharray="4 7"
-          strokeOpacity="0.18"
-          strokeLinecap="round"
-        />
-      </svg>
-
-      {/* Floating circle — bobbing */}
       {!reduced && (
         <motion.svg
           viewBox="0 0 24 24"
@@ -187,44 +103,12 @@ function LeftDecor({ reduced }: { reduced: boolean | null }) {
             strokeWidth="1.5"
             strokeOpacity="0.25"
           />
-          <circle
-            cx="12"
-            cy="12"
-            r="3.5"
-            fill={BRAND.blue}
-            fillOpacity="0.18"
-          />
         </motion.svg>
       )}
-
-      {/* Horizontal tick marks — ruler feel */}
-      {[0, 1, 2, 3].map((i) => (
-        <svg
-          key={i}
-          viewBox="0 0 16 4"
-          fill="none"
-          className="absolute"
-          style={{ top: 300 + i * 14, left: 30, width: 16, height: 4 }}
-        >
-          <line
-            x1="0"
-            y1="2"
-            x2={i % 2 === 0 ? 16 : 10}
-            y2="2"
-            stroke={BRAND.blueNavy}
-            strokeWidth="1.5"
-            strokeOpacity={0.12 + i * 0.03}
-            strokeLinecap="round"
-          />
-        </svg>
-      ))}
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   RIGHT DECORATION — concentric rings + crosses + triangle + scatter
-───────────────────────────────────────────────────────────────────── */
 function RightDecor({ reduced }: { reduced: boolean | null }) {
   const teal = "#0D9488";
   return (
@@ -239,7 +123,6 @@ function RightDecor({ reduced }: { reduced: boolean | null }) {
         zIndex: 0,
       }}
     >
-      {/* Concentric rings */}
       <motion.svg
         viewBox="0 0 140 140"
         fill="none"
@@ -263,89 +146,6 @@ function RightDecor({ reduced }: { reduced: boolean | null }) {
           />
         ))}
       </motion.svg>
-
-      {/* Cross marks */}
-      {[
-        { x: 8, y: 180, s: 14, color: teal, delay: 0.55 },
-        { x: 88, y: 162, s: 10, color: BRAND.blueNavy, delay: 0.7 },
-        { x: 28, y: 310, s: 12, color: teal, delay: 0.85 },
-        { x: 110, y: 280, s: 8, color: BRAND.blueNavy, delay: 0.95 },
-      ].map((c, i) => (
-        <motion.svg
-          key={i}
-          viewBox="0 0 20 20"
-          fill="none"
-          className="absolute"
-          style={{ left: c.x, top: c.y, width: c.s, height: c.s }}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: c.delay, ease }}
-        >
-          <line
-            x1="10"
-            y1="2"
-            x2="10"
-            y2="18"
-            stroke={c.color}
-            strokeWidth="2"
-            strokeOpacity="0.32"
-            strokeLinecap="round"
-          />
-          <line
-            x1="2"
-            y1="10"
-            x2="18"
-            y2="10"
-            stroke={c.color}
-            strokeWidth="2"
-            strokeOpacity="0.32"
-            strokeLinecap="round"
-          />
-        </motion.svg>
-      ))}
-
-      {/* Triangle outline */}
-      <motion.svg
-        viewBox="0 0 50 44"
-        fill="none"
-        className="absolute"
-        style={{ bottom: 70, right: 18, width: 50, height: 44 }}
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.65, delay: 0.85, ease }}
-      >
-        <path
-          d="M25 4 L46 40 L4 40 Z"
-          stroke={teal}
-          strokeWidth="1.5"
-          strokeOpacity="0.26"
-          strokeLinejoin="round"
-          fill="none"
-        />
-      </motion.svg>
-
-      {/* Dot scatter */}
-      <svg
-        viewBox="0 0 90 70"
-        fill="none"
-        className="absolute"
-        style={{ bottom: 10, left: 0, width: 90, height: 70 }}
-      >
-        {Array.from({ length: 5 }).map((_, col) =>
-          Array.from({ length: 4 }).map((_, row) => (
-            <circle
-              key={`${col}-${row}`}
-              cx={col * 18 + 9}
-              cy={row * 17 + 9}
-              r="2"
-              fill={teal}
-              fillOpacity={0.12 + row * 0.02}
-            />
-          )),
-        )}
-      </svg>
-
-      {/* Floating rotating square */}
       {!reduced && (
         <motion.svg
           viewBox="0 0 18 18"
@@ -373,57 +173,17 @@ function RightDecor({ reduced }: { reduced: boolean | null }) {
           />
         </motion.svg>
       )}
-
-      {/* Horizontal dashed line */}
-      <svg
-        viewBox="0 0 90 4"
-        fill="none"
-        className="absolute"
-        style={{ top: 152, right: 32, width: 90, height: 4 }}
-      >
-        <line
-          x1="0"
-          y1="2"
-          x2="90"
-          y2="2"
-          stroke={teal}
-          strokeWidth="1.5"
-          strokeDasharray="5 8"
-          strokeOpacity="0.18"
-          strokeLinecap="round"
-        />
-      </svg>
-
-      {/* Wavy accent path */}
-      <motion.svg
-        viewBox="0 0 80 30"
-        fill="none"
-        className="absolute"
-        style={{ bottom: 155, right: 20, width: 80, height: 30 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.6 }}
-      >
-        <motion.path
-          d="M4 15 Q18 4 32 15 Q46 26 60 15 Q70 8 78 15"
-          stroke={teal}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeOpacity="0.22"
-          fill="none"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ delay: 1.1, duration: 1.2, ease }}
-        />
-      </motion.svg>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   STAT PILL
-───────────────────────────────────────────────────────────────────── */
-function StatsPill() {
+function StatsPill({
+  labels,
+  stats,
+}: {
+  labels: HeroStatLabel[];
+  stats: SiteStats;
+}) {
   return (
     <div
       className="inline-flex flex-wrap justify-center sm:flex-nowrap rounded-2xl overflow-hidden mx-auto"
@@ -433,115 +193,107 @@ function StatsPill() {
         boxShadow: "0 6px 32px rgba(15,35,64,0.07)",
       }}
     >
-      {stats.map((s, i) => (
-        <div key={s.label} className="flex items-center">
-          {i > 0 && (
-            <div
-              style={{
-                width: 1,
-                height: 52,
-                background: "rgba(15,35,64,0.07)",
-                flexShrink: 0,
-              }}
-            />
-          )}
-          <motion.div
-            className="flex items-center gap-3 px-5 py-4 sm:px-7"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.28 + i * 0.08, ease }}
-          >
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${s.accent}14` }}
-            >
-              <s.Icon
-                className="w-4.5 h-4.5"
-                style={{ color: s.accent, width: 18, height: 18 }}
+      {labels.map((s, i) => {
+        const meta = STAT_META[s.key];
+        return (
+          <div key={s.key} className="flex items-center">
+            {i > 0 && (
+              <div
+                style={{
+                  width: 1,
+                  height: 52,
+                  background: "rgba(15,35,64,0.07)",
+                  flexShrink: 0,
+                }}
               />
-            </div>
-            <div className="text-left">
-              <p
-                className="font-display font-extrabold leading-none"
-                style={{
-                  fontSize: "1.5rem",
-                  color: BRAND.blueNavy,
-                  letterSpacing: "-0.03em",
-                }}
+            )}
+            <motion.div
+              className="flex items-center gap-3 px-5 py-4 sm:px-7"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.28 + i * 0.08, ease }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${meta.accent}14` }}
               >
-                {s.value}
-              </p>
-              <p
-                style={{
-                  fontSize: "0.6875rem",
-                  color: "#94A3B8",
-                  marginTop: 2,
-                }}
-              >
-                {s.label}
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      ))}
+                <meta.Icon
+                  style={{ color: meta.accent, width: 18, height: 18 }}
+                />
+              </div>
+              <div className="text-left">
+                <p
+                  className="font-display font-extrabold leading-none"
+                  style={{
+                    fontSize: "1.5rem",
+                    color: BRAND.blueNavy,
+                    letterSpacing: "-0.03em",
+                  }}
+                >
+                  {statValue(s.key, stats)}
+                </p>
+                <p style={{ fontSize: "0.6875rem", color: "#94A3B8", marginTop: 2 }}>
+                  {s.label}
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   TEAM AVATAR STRIP
-───────────────────────────────────────────────────────────────────── */
-function TeamStrip() {
+function TeamStrip({
+  label,
+  team,
+}: {
+  label: string;
+  team: TeamMember[];
+}) {
+  const shown = team.slice(0, 5);
+  const overflow = Math.max(0, team.length - shown.length);
+
   return (
     <div className="flex items-center justify-center gap-4 flex-wrap">
-      {/* Overlapping avatars */}
       <div className="flex -space-x-3.5">
-        {teamAvatars.map((a, i) => (
+        {shown.map((a, i) => (
           <motion.div
-            key={a.initials}
-            title={`${a.name} — ${a.role}`}
+            key={a.id}
+            title={`${a.name} — ${a.title}`}
             className="w-11 h-11 rounded-full border-[2.5px] border-white flex items-center justify-center font-display font-black text-white cursor-default select-none"
             style={{
               fontSize: "0.625rem",
-              background: a.bg,
-              zIndex: teamAvatars.length - i,
+              background: AVATAR_BG[i % AVATAR_BG.length],
+              zIndex: shown.length - i,
               boxShadow: "0 2px 10px rgba(0,0,0,0.14)",
             }}
             initial={{ opacity: 0, scale: 0.65, x: -6 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             transition={{ duration: 0.38, delay: 0.34 + i * 0.07, ease }}
-            whileHover={{
-              scale: 1.12,
-              zIndex: 20,
-              transition: { duration: 0.15 },
-            }}
           >
             {a.initials}
           </motion.div>
         ))}
-        {/* +9 overflow */}
-        <motion.div
-          className="w-11 h-11 rounded-full border-[2.5px] border-white flex items-center justify-center font-display font-bold select-none"
-          style={{
-            fontSize: "0.625rem",
-            background: "#F1F5F9",
-            color: "#64748B",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-            zIndex: 0,
-          }}
-          initial={{ opacity: 0, scale: 0.65 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            duration: 0.38,
-            delay: 0.34 + teamAvatars.length * 0.07,
-            ease,
-          }}
-        >
-          +9
-        </motion.div>
+        {overflow > 0 && (
+          <motion.div
+            className="w-11 h-11 rounded-full border-[2.5px] border-white flex items-center justify-center font-display font-bold select-none"
+            style={{
+              fontSize: "0.625rem",
+              background: "#F1F5F9",
+              color: "#64748B",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+              zIndex: 0,
+            }}
+            initial={{ opacity: 0, scale: 0.65 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.38, delay: 0.34 + shown.length * 0.07, ease }}
+          >
+            +{overflow}
+          </motion.div>
+        )}
       </div>
 
-      {/* Label */}
       <motion.div
         className="text-left"
         initial={{ opacity: 0, x: -6 }}
@@ -552,31 +304,26 @@ function TeamStrip() {
           className="font-display font-semibold"
           style={{ fontSize: "0.9375rem", color: BRAND.blueNavy }}
         >
-          Tim Inggris Go
+          {label}
         </p>
         <p style={{ fontSize: "0.75rem", color: "#94A3B8", marginTop: 1 }}>
-          14 orang · tutors, educators &amp; creatives
+          {team.length} orang · tutors, educators &amp; creatives
         </p>
       </motion.div>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   EDITORIAL BOTTOM BAND
-───────────────────────────────────────────────────────────────────── */
-function EditorialBand() {
+function EditorialBand({ editorial }: { editorial: typeof DEFAULT_ABOUT.heroEditorial }) {
   return (
     <div
       className="grid grid-cols-1 lg:grid-cols-12 overflow-hidden"
       style={{ borderTop: "1.5px solid rgba(15,35,64,0.08)" }}
     >
-      {/* Quote panel — navy */}
       <div
         className="lg:col-span-8 relative flex items-center gap-6 px-8 py-9 lg:px-14 lg:py-11 overflow-hidden"
         style={{ background: BRAND.blueNavy }}
       >
-        {/* Background texture — faint radial */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -585,8 +332,6 @@ function EditorialBand() {
               "radial-gradient(ellipse 60% 80% at 90% 50%, rgba(255,255,255,0.04) 0%, transparent 70%)",
           }}
         />
-
-        {/* Big decorative quote mark */}
         <svg
           viewBox="0 0 60 46"
           fill="none"
@@ -612,7 +357,7 @@ function EditorialBand() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.42, ease }}
           >
-            "Speak First, Perfect Later."
+            &ldquo;{editorial.quote}&rdquo;
           </motion.p>
 
           <motion.div
@@ -620,7 +365,6 @@ function EditorialBand() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.54, ease }}
           >
-            {/* Attribution line with avatar */}
             <div className="flex items-center gap-3">
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center font-display font-black text-white flex-shrink-0"
@@ -630,14 +374,14 @@ function EditorialBand() {
                   border: "2px solid rgba(255,255,255,0.25)",
                 }}
               >
-                NR
+                {editorial.authorInitials}
               </div>
               <div>
                 <p
                   className="font-display font-semibold text-white"
                   style={{ fontSize: "0.8125rem", opacity: 0.9 }}
                 >
-                  Nina Rokhmawati, S.Pd
+                  {editorial.authorName}
                 </p>
                 <p
                   style={{
@@ -645,7 +389,7 @@ function EditorialBand() {
                     color: "rgba(255,255,255,0.45)",
                   }}
                 >
-                  CEO &amp; Founder · Inggris Go
+                  {editorial.authorRole}
                 </p>
               </div>
             </div>
@@ -653,33 +397,21 @@ function EditorialBand() {
         </div>
       </div>
 
-      {/* Facts panel — teal tints */}
       <div
         className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1"
         style={{ borderLeft: "1.5px solid rgba(13,148,136,0.18)" }}
       >
         {[
-          {
-            label: "Berbasis di",
-            value: "Kampung Inggris Pare",
-            bg: "rgba(13,148,136,0.07)",
-            border: "none",
-          },
-          {
-            label: "Program tersedia",
-            value: "Online & Offline",
-            bg: "rgba(13,148,136,0.04)",
-            border: "1.5px solid rgba(13,148,136,0.12)",
-          },
+          { label: editorial.fact1Label, value: editorial.fact1Value },
+          { label: editorial.fact2Label, value: editorial.fact2Value },
         ].map((fact, i) => (
           <motion.div
-            key={fact.label}
+            key={fact.label + i}
             className="flex flex-col justify-center px-6 py-6 lg:py-5"
             style={{
-              background: fact.bg,
-              borderLeft:
-                i === 1 && fact.border !== "none" ? fact.border : undefined,
-              borderTop: i === 1 ? fact.border : undefined,
+              background:
+                i === 0 ? "rgba(13,148,136,0.07)" : "rgba(13,148,136,0.04)",
+              borderTop: i === 1 ? "1.5px solid rgba(13,148,136,0.12)" : undefined,
             }}
             initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
@@ -713,12 +445,41 @@ function EditorialBand() {
 export const HeroSection = () => {
   const reduced = useReducedMotion();
 
+  const { data } = trpc.siteContent.getAbout.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const statsQuery = trpc.siteContent.getSiteStats.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const c = data && data.isActive !== false ? data : DEFAULT_ABOUT;
+  const stats: SiteStats = statsQuery.data ?? {
+    alumni: 2000,
+    rating: 4.9,
+    years: 8,
+    programs: 12,
+  };
+
+  const locationBadge = c.heroLocationBadge || DEFAULT_ABOUT.heroLocationBadge;
+  const sectionBadge = c.heroSectionBadge || DEFAULT_ABOUT.heroSectionBadge;
+  const overline = c.heroOverline || DEFAULT_ABOUT.heroOverline;
+  const title = c.heroTitle || DEFAULT_ABOUT.heroTitle;
+  const titleAccent = c.heroTitleAccent ?? DEFAULT_ABOUT.heroTitleAccent;
+  const description = c.heroDescription || DEFAULT_ABOUT.heroDescription;
+  const teamStripLabel =
+    c.heroTeamStripLabel || DEFAULT_ABOUT.heroTeamStripLabel;
+  const statLabels =
+    c.heroStatLabels && c.heroStatLabels.length > 0
+      ? c.heroStatLabels
+      : DEFAULT_ABOUT.heroStatLabels;
+  const editorial = { ...DEFAULT_ABOUT.heroEditorial, ...(c.heroEditorial ?? {}) };
+  const team: TeamMember[] = data?.team ?? [];
+
   return (
     <section
       className="relative w-full overflow-hidden pt-28 pb-0 lg:pt-36"
       style={{ background: "var(--color-brand-background, #F8FAFC)" }}
     >
-      {/* ── Ambient radial glow behind headline ── */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -728,8 +489,6 @@ export const HeroSection = () => {
             "radial-gradient(ellipse 65% 50% at 50% 0%, rgba(27,79,219,0.07) 0%, transparent 65%)",
         }}
       />
-
-      {/* ── Dot texture overlay ── */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -740,18 +499,12 @@ export const HeroSection = () => {
         }}
       />
 
-      {/* ── Geometric side decorations ── */}
       <LeftDecor reduced={reduced} />
       <RightDecor reduced={reduced} />
 
-      {/* ══════════════════════════════════════════════════════════
-          CENTER CONTENT — z-10
-      ══════════════════════════════════════════════════════════ */}
       <div className="relative z-10 max-w-5xl mx-auto px-5 sm:px-8 text-center">
-        {/* Badges */}
         <Reveal>
           <div className="flex items-center justify-center flex-wrap gap-2.5 mb-7">
-            {/* Location badge */}
             <span
               className="inline-flex items-center gap-2 font-display font-semibold rounded-full px-4 py-1.5"
               style={{
@@ -776,40 +529,41 @@ export const HeroSection = () => {
                 className="w-3 h-3 flex-shrink-0"
                 style={{ color: BRAND.blueNavy }}
               />
-              Kampung Inggris Pare, Kediri
+              {locationBadge}
             </span>
 
-            {/* Section label */}
-            <span
-              className="inline-flex items-center gap-1.5 font-display font-semibold rounded-full px-4 py-1.5"
-              style={{
-                fontSize: "0.75rem",
-                letterSpacing: "0.03em",
-                background: "rgba(234,88,12,0.09)",
-                color: "#C2410C",
-                border: "1px solid rgba(234,88,12,0.18)",
-              }}
-            >
-              Tentang Kami
-            </span>
+            {sectionBadge && (
+              <span
+                className="inline-flex items-center gap-1.5 font-display font-semibold rounded-full px-4 py-1.5"
+                style={{
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.03em",
+                  background: "rgba(234,88,12,0.09)",
+                  color: "#C2410C",
+                  border: "1px solid rgba(234,88,12,0.18)",
+                }}
+              >
+                {sectionBadge}
+              </span>
+            )}
           </div>
         </Reveal>
 
-        {/* ── Overline — small editorial label ── */}
-        <Reveal delay={0.04}>
-          <p
-            className="font-display font-bold uppercase tracking-widest mb-4"
-            style={{
-              fontSize: "0.6875rem",
-              color: "#94A3B8",
-              letterSpacing: "0.2em",
-            }}
-          >
-            Kisah kami
-          </p>
-        </Reveal>
+        {overline && (
+          <Reveal delay={0.04}>
+            <p
+              className="font-display font-bold uppercase tracking-widest mb-4"
+              style={{
+                fontSize: "0.6875rem",
+                color: "#94A3B8",
+                letterSpacing: "0.2em",
+              }}
+            >
+              {overline}
+            </p>
+          </Reveal>
+        )}
 
-        {/* ── Main headline ── */}
         <Reveal delay={0.09}>
           <h1
             className="font-display font-extrabold leading-[1.06] mb-5 mx-auto"
@@ -820,12 +574,13 @@ export const HeroSection = () => {
               maxWidth: "780px",
             }}
           >
-            Membangun Kepercayaan Diri <br className="hidden sm:block" />
-            <span style={GRADIENT_GOLD_TEXT}>Berbahasa Inggris</span>
+            {title} <br className="hidden sm:block" />
+            {titleAccent && (
+              <span style={GRADIENT_GOLD_TEXT}>{titleAccent}</span>
+            )}
           </h1>
         </Reveal>
 
-        {/* ── Supporting paragraph ── */}
         <Reveal delay={0.15}>
           <p
             className="leading-relaxed mx-auto"
@@ -836,22 +591,13 @@ export const HeroSection = () => {
               lineHeight: "1.8",
             }}
           >
-            Inggris Go hadir untuk membuktikan bahwa siapa pun bisa berbicara
-            bahasa Inggris dengan percaya diri — dari Kampung Inggris untuk
-            seluruh Indonesia.
+            {description}
           </p>
         </Reveal>
 
-        {/* ── Thin divider ── */}
         <Reveal delay={0.19}>
           <div className="flex items-center justify-center gap-3 my-10">
-            <div
-              style={{
-                width: 40,
-                height: 1,
-                background: "rgba(15,35,64,0.12)",
-              }}
-            />
+            <div style={{ width: 40, height: 1, background: "rgba(15,35,64,0.12)" }} />
             <div
               style={{
                 width: 6,
@@ -862,31 +608,26 @@ export const HeroSection = () => {
                 transform: "rotate(45deg)",
               }}
             />
-            <div
-              style={{
-                width: 40,
-                height: 1,
-                background: "rgba(15,35,64,0.12)",
-              }}
-            />
+            <div style={{ width: 40, height: 1, background: "rgba(15,35,64,0.12)" }} />
           </div>
         </Reveal>
 
-        {/* ── Stats pill ── */}
         <Reveal delay={0.21}>
-          <StatsPill />
+          <StatsPill labels={statLabels} stats={stats} />
         </Reveal>
 
-        {/* ── Team avatar strip ── */}
-        <Reveal delay={0.28} className="mt-10 mb-16">
-          <TeamStrip />
-        </Reveal>
+        {team.length > 0 && (
+          <Reveal delay={0.28} className="mt-10 mb-16">
+            <TeamStrip label={teamStripLabel} team={team} />
+          </Reveal>
+        )}
       </div>
 
-      {/* ── Editorial bottom band — full width, no max-w ── */}
       <Reveal delay={0.34}>
-        <EditorialBand />
+        <EditorialBand editorial={editorial} />
       </Reveal>
     </section>
   );
 };
+
+export default HeroSection;

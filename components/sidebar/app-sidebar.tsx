@@ -28,6 +28,10 @@ import {
   ShieldCheck,
   Gavel,
   Users2,
+  Home,
+  Info,
+  Phone,
+  Megaphone,
 } from "lucide-react";
 
 import {
@@ -43,7 +47,6 @@ import { GroupNavItem, NavGroups } from "./nav-group";
 
 import { AppBrand } from "./app-brand";
 import { DashboardNavUser } from "./nav-user";
-import { NavProject } from "./nav-projects";
 import { NavTeamProjects } from "./nav-team-projects";
 
 import type { Role } from "@/app/db/schema/roles";
@@ -126,6 +129,10 @@ export const routes = {
     account: "/dashboard/settings/account",
     header: "/dashboard/settings/header",
     footer: "/dashboard/settings/footer",
+    home: "/dashboard/settings/home",
+    about: "/dashboard/settings/about",
+    contact: "/dashboard/settings/contact",
+    cta: "/dashboard/settings/cta",
     paymentGateway: "/dashboard/settings/payment-gateway",
     merchantRequests: "/dashboard/settings/merchant-requests",
   },
@@ -434,6 +441,47 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         roles: ["admin", "super_admin"],
       },
       {
+        title: "Daftar Merchant",
+        icon: Store,
+        url: routes.merchant.root,
+        isActive: isActive(pathname, routes.merchant.root),
+        roles: ["super_admin"],
+      },
+    ],
+    activeRole,
+  );
+
+  const cmsItems = filterGroupItems(
+    [
+      {
+        title: "CMS Beranda",
+        icon: Home,
+        url: routes.settings.home,
+        isActive: isActive(pathname, routes.settings.home),
+        roles: ["admin", "super_admin"],
+      },
+      {
+        title: "CMS Tentang Kami",
+        icon: Info,
+        url: routes.settings.about,
+        isActive: isActive(pathname, routes.settings.about),
+        roles: ["admin", "super_admin"],
+      },
+      {
+        title: "CMS Hubungi Kami",
+        icon: Phone,
+        url: routes.settings.contact,
+        isActive: isActive(pathname, routes.settings.contact),
+        roles: ["admin", "super_admin"],
+      },
+      {
+        title: "CTA Bersama",
+        icon: Megaphone,
+        url: routes.settings.cta,
+        isActive: isActive(pathname, routes.settings.cta),
+        roles: ["admin", "super_admin"],
+      },
+      {
         title: "Site Header",
         icon: Globe2,
         url: routes.settings.header,
@@ -446,13 +494,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: routes.settings.footer,
         isActive: isActive(pathname, routes.settings.footer),
         roles: ["admin", "super_admin"],
-      },
-      {
-        title: "Daftar Merchant",
-        icon: Store,
-        url: routes.merchant.root,
-        isActive: isActive(pathname, routes.merchant.root),
-        roles: ["super_admin"],
       },
     ],
     activeRole,
@@ -501,26 +542,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     activeRole,
   );
 
-  const recentPrograms = [
-    {
-      name: "IELTS Mastery Bootcamp",
-      url: routes.programs.detail("1"),
-      updatedAt: "2 jam lalu",
-    },
-    {
-      name: "TOEFL Intensive Class",
-      url: routes.programs.detail("2"),
-      updatedAt: "5 jam lalu",
-    },
-    {
-      name: "SAT Advanced Preparation",
-      url: routes.programs.detail("3"),
-      updatedAt: "Kemarin",
-    },
-  ];
-
-  const showRecentPrograms = canUseRole(["admin", "super_admin"], activeRole);
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader
@@ -529,7 +550,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <AppBrand />
       </SidebarHeader>
 
-      <SidebarContent className="py-1">
+      <SidebarContent
+        className={[
+          "gap-0 py-2",
+          // Hairline divider + generous margin above every top-level group
+          // except the first — keeps groups clearly separated and airy in
+          // both the expanded and the collapsed (icon-rail) states.
+          "[&>[data-sidebar=group]:not(:first-child)]:mt-3.5",
+          "[&>[data-sidebar=group]:not(:first-child)]:border-t",
+          "[&>[data-sidebar=group]:not(:first-child)]:border-[rgba(10,45,135,0.07)]",
+          "[&>[data-sidebar=group]:not(:first-child)]:pt-3.5",
+        ].join(" ")}
+      >
         {hasItems(mainItems) && <NavMain items={mainItems} />}
 
         {hasItems(accountItems) && (
@@ -562,11 +594,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavGroups label="Bisnis" items={businessItems} />
         )}
 
+        {hasItems(cmsItems) && <NavGroups label="CMS" items={cmsItems} />}
+
         {hasItems(directorItems) && (
           <NavGroups label="Menu Direktur" items={directorItems} />
         )}
-
-        {showRecentPrograms && <NavProject items={recentPrograms} />}
       </SidebarContent>
 
       <SidebarFooter style={{ borderTop: "1px solid rgba(10,45,135,0.08)" }}>

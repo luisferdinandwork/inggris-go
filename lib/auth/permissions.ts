@@ -91,6 +91,22 @@ export const DASHBOARD_ACCESS_RULES: AccessRule[] = [
     roles: ["admin", "super_admin"],
   },
   {
+    path: "/dashboard/settings/home",
+    roles: ["admin", "super_admin"],
+  },
+  {
+    path: "/dashboard/settings/about",
+    roles: ["admin", "super_admin"],
+  },
+  {
+    path: "/dashboard/settings/contact",
+    roles: ["admin", "super_admin"],
+  },
+  {
+    path: "/dashboard/settings/cta",
+    roles: ["admin", "super_admin"],
+  },
+  {
     path: "/dashboard/settings/payment-gateway",
     roles: ["super_admin"],
   },

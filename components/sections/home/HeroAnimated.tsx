@@ -9,8 +9,15 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
+
+import { trpc } from "@/lib/trpc/client";
 import { BRAND, GRADIENT_GOLD_TEXT } from "@/constants/brand";
-import { SOCIAL_PROOF } from "@/constants";
+import { DEFAULT_HOME } from "@/app/modules/site-content/site-content.defaults";
+import type {
+  HeroFloatingText,
+  HeroStatLabel,
+  SiteStats,
+} from "@/app/modules/site-content/site-content.types";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -24,22 +31,48 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.65, ease } },
 };
 
+function formatStat(key: HeroStatLabel["key"], stats: SiteStats): string {
+  switch (key) {
+    case "alumni":
+      return `${stats.alumni.toLocaleString("en-US")}+`;
+    case "rating":
+      return `${stats.rating}★`;
+    case "years":
+      return `${stats.years}+`;
+    case "programs":
+      return `${stats.programs}`;
+  }
+}
+
+/** Renders `text` with the first occurrence of `highlight` styled. */
+function Highlighted({
+  text,
+  highlight,
+}: {
+  text: string;
+  highlight: string;
+}) {
+  if (!highlight || !text.includes(highlight)) return <>{text}</>;
+  const [before, ...rest] = text.split(highlight);
+  return (
+    <>
+      {before}
+      <strong style={{ color: BRAND.blue, fontWeight: 600 }}>{highlight}</strong>
+      {rest.join(highlight)}
+    </>
+  );
+}
+
 // ── Pulsing mic icon (SVG) ──────────────────────────────────────────────────
 function MicIcon({ color }: { color: string }) {
   return (
-    <svg
-      className="w-5 h-5"
-      fill={color}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
+    <svg className="w-5 h-5" fill={color} viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z" />
       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
     </svg>
   );
 }
 
-// ── Star rating ────────────────────────────────────────────────────────────
 function Stars({ count = 5 }: { count?: number }) {
   return (
     <span className="flex gap-px">
@@ -58,7 +91,6 @@ function Stars({ count = 5 }: { count?: number }) {
   );
 }
 
-// ── Waveform bars (decorative) ────────────────────────────────────────────
 function WaveformBars({ color }: { color: string }) {
   const heights = [8, 14, 20, 14, 18, 10, 16, 12, 20, 8, 14, 18];
   return (
@@ -81,8 +113,7 @@ function WaveformBars({ color }: { color: string }) {
   );
 }
 
-// ── Floating speech bubble ────────────────────────────────────────────────
-function SpeechBubble({ reduced }: { reduced: boolean | null }) {
+function SpeechBubble({ floating }: { floating: HeroFloatingText }) {
   return (
     <motion.div
       className="absolute z-30"
@@ -101,7 +132,6 @@ function SpeechBubble({ reduced }: { reduced: boolean | null }) {
       animate={{ opacity: 1, scale: 1, x: 0 }}
       transition={{ delay: 1.1, duration: 0.55, ease }}
     >
-      {/* Bubble tail */}
       <div
         aria-hidden
         style={{
@@ -117,7 +147,6 @@ function SpeechBubble({ reduced }: { reduced: boolean | null }) {
         }}
       />
 
-      {/* Avatar + name */}
       <div className="flex items-center gap-2 mb-2">
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
@@ -127,14 +156,14 @@ function SpeechBubble({ reduced }: { reduced: boolean | null }) {
             border: `1.5px solid ${BRAND.borderSoft}`,
           }}
         >
-          R
+          {floating.speechInitials}
         </div>
         <div>
           <p
             className="font-bold leading-none"
             style={{ fontSize: "0.6875rem", color: BRAND.blueNavy }}
           >
-            Rina, Surabaya
+            {floating.speechName}
           </p>
           <Stars />
         </div>
@@ -149,14 +178,13 @@ function SpeechBubble({ reduced }: { reduced: boolean | null }) {
           margin: 0,
         }}
       >
-        &ldquo;Sekarang aku udah berani ngomong di depan bule!&rdquo;
+        &ldquo;{floating.speechQuote}&rdquo;
       </p>
     </motion.div>
   );
 }
 
-// ── Floating live-session badge ───────────────────────────────────────────
-function LiveBadge() {
+function LiveBadge({ title }: { title: string }) {
   return (
     <motion.div
       className="absolute z-30 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl"
@@ -184,7 +212,7 @@ function LiveBadge() {
           className="font-bold leading-none mb-1"
           style={{ fontSize: "0.75rem", color: BRAND.blueNavy }}
         >
-          Live Speaking Now
+          {title}
         </p>
         <WaveformBars color={BRAND.blue} />
       </div>
@@ -192,8 +220,13 @@ function LiveBadge() {
   );
 }
 
-// ── Floating active-students pill ──────────────────────────────────────────
-function ActiveStudentsBadge() {
+function ActiveStudentsBadge({
+  activeCount,
+  text,
+}: {
+  activeCount: number;
+  text: string;
+}) {
   return (
     <motion.div
       className="absolute z-30 flex items-center gap-2 px-3.5 py-2 rounded-full"
@@ -215,14 +248,17 @@ function ActiveStudentsBadge() {
         className="font-bold text-white leading-none"
         style={{ fontSize: "0.6875rem" }}
       >
-        {SOCIAL_PROOF.activeStudents}+ Active
+        {activeCount}+ {text}
       </p>
     </motion.div>
   );
 }
 
-// ── Floating conversation mini-card ───────────────────────────────────────
-function ConversationCard() {
+function ConversationCard({ floating }: { floating: HeroFloatingText }) {
+  const messages = [
+    { text: floating.chatMsg1, align: "left" as const },
+    { text: floating.chatMsg2, align: "right" as const },
+  ];
   return (
     <motion.div
       className="absolute z-30 rounded-2xl overflow-hidden"
@@ -239,7 +275,6 @@ function ConversationCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.6, duration: 0.5, ease }}
     >
-      {/* Header bar */}
       <div
         className="px-3 py-2 flex items-center gap-2"
         style={{
@@ -256,15 +291,11 @@ function ConversationCard() {
             letterSpacing: "0.06em",
           }}
         >
-          SPEAKING PRACTICE
+          {floating.chatHeader}
         </p>
       </div>
-      {/* Messages */}
       <div className="p-3 space-y-2">
-        {[
-          { text: "Hello! How are you?", align: "left" },
-          { text: "I'm fine, thank you!", align: "right" },
-        ].map((msg, i) => (
+        {messages.map((msg, i) => (
           <div
             key={i}
             className={`flex ${msg.align === "right" ? "justify-end" : "justify-start"}`}
@@ -289,7 +320,6 @@ function ConversationCard() {
   );
 }
 
-// ── Main radial glow behind image ──────────────────────────────────────────
 function ImageGlow() {
   return (
     <div
@@ -310,12 +340,51 @@ function ImageGlow() {
 export default function HeroAnimated() {
   const reduced = useReducedMotion();
   const { scrollY } = useScroll();
-
-  // Subtle parallax on the image column
   const imageY = useTransform(scrollY, [0, 500], [0, -40]);
 
   const [primaryHovered, setPrimaryHovered] = useState(false);
   const [secondaryHovered, setSecondaryHovered] = useState(false);
+
+  const { data } = trpc.siteContent.getHome.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const statsQuery = trpc.siteContent.getSiteStats.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const c = data && data.isActive !== false ? data : DEFAULT_HOME;
+  const stats: SiteStats = statsQuery.data ?? {
+    alumni: 2000,
+    rating: 4.9,
+    years: 8,
+    programs: 12,
+  };
+
+  const badge = c.heroBadgeText || DEFAULT_HOME.heroBadgeText;
+  const title = c.heroTitle || DEFAULT_HOME.heroTitle;
+  const titleAccent = c.heroTitleAccent ?? DEFAULT_HOME.heroTitleAccent;
+  const subtitle = c.heroSubtitle || DEFAULT_HOME.heroSubtitle;
+  const subtitleHighlight =
+    c.heroSubtitleHighlight ?? DEFAULT_HOME.heroSubtitleHighlight;
+  const description = c.heroDescription || DEFAULT_HOME.heroDescription;
+  const imageUrl = c.heroImageUrl || DEFAULT_HOME.heroImageUrl;
+  const imageAlt = c.heroImageAlt || DEFAULT_HOME.heroImageAlt;
+  const primaryLabel = c.heroPrimaryCtaLabel || DEFAULT_HOME.heroPrimaryCtaLabel;
+  const primaryHref = c.heroPrimaryCtaHref || DEFAULT_HOME.heroPrimaryCtaHref;
+  const secondaryLabel =
+    c.heroSecondaryCtaLabel || DEFAULT_HOME.heroSecondaryCtaLabel;
+  const secondaryHref =
+    c.heroSecondaryCtaHref || DEFAULT_HOME.heroSecondaryCtaHref;
+  const floating: HeroFloatingText = {
+    ...DEFAULT_HOME.heroFloatingText,
+    ...(c.heroFloatingText ?? {}),
+  };
+  const statLabels =
+    c.heroStatLabels && c.heroStatLabels.length > 0
+      ? c.heroStatLabels
+      : DEFAULT_HOME.heroStatLabels;
+
+  const statColors = [BRAND.blue, BRAND.blueVivid, BRAND.blueNavy];
 
   return (
     <section
@@ -326,7 +395,6 @@ export default function HeroAnimated() {
         paddingTop: "var(--navbar-height)",
       }}
     >
-      {/* ── Decorative blobs ── */}
       <div
         aria-hidden
         className={reduced ? "" : "animate-blob"}
@@ -356,37 +424,33 @@ export default function HeroAnimated() {
         }}
       />
 
-      {/* ── Content wrapper ── */}
       <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-12 py-10 lg:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 xl:gap-16 items-center min-h-[min(88vh,780px)] lg:min-h-0">
-          {/* ──────────────────────────────────────────────────────────
-              LEFT COLUMN — copy, CTAs, stats
-          ────────────────────────────────────────────────────────── */}
           <motion.div
             variants={container}
             initial="hidden"
             animate="show"
             className="flex flex-col"
           >
-            {/* Badge */}
-            <motion.div variants={item} className="mb-6">
-              <span
-                className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full"
-                style={{
-                  background: BRAND.surface,
-                  color: BRAND.blueNavy,
-                  boxShadow: BRAND.shadowSoft,
-                }}
-              >
-                <span className="relative flex h-2 w-2 flex-shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            {badge && (
+              <motion.div variants={item} className="mb-6">
+                <span
+                  className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full"
+                  style={{
+                    background: BRAND.surface,
+                    color: BRAND.blueNavy,
+                    boxShadow: BRAND.shadowSoft,
+                  }}
+                >
+                  <span className="relative flex h-2 w-2 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                  </span>
+                  {badge}
                 </span>
-                Kampung Inggris Pare, Indonesia
-              </span>
-            </motion.div>
+              </motion.div>
+            )}
 
-            {/* Headline */}
             <motion.h1
               variants={item}
               className="font-jakarta font-extrabold leading-[1.07] mb-5"
@@ -396,21 +460,18 @@ export default function HeroAnimated() {
                 letterSpacing: "-0.025em",
               }}
             >
-              Belajar Bahasa Inggris{" "}
-              <span style={GRADIENT_GOLD_TEXT}>Tanpa Takut Salah</span>
+              {title}{" "}
+              {titleAccent && (
+                <span style={GRADIENT_GOLD_TEXT}>{titleAccent}</span>
+              )}
             </motion.h1>
 
-            {/* Sub-headline */}
             <motion.p
               variants={item}
               className="text-lg sm:text-xl leading-relaxed mb-2 max-w-[500px]"
               style={{ color: BRAND.textMuted }}
             >
-              Mulai berbicara bahasa Inggris dengan percaya diri bersama{" "}
-              <strong style={{ color: BRAND.blue, fontWeight: 600 }}>
-                Inggris Go
-              </strong>{" "}
-              dari Kampung Inggris Pare.
+              <Highlighted text={subtitle} highlight={subtitleHighlight} />
             </motion.p>
 
             <motion.p
@@ -418,15 +479,12 @@ export default function HeroAnimated() {
               className="text-base leading-relaxed mb-9 max-w-[480px]"
               style={{ color: BRAND.textFaint }}
             >
-              Program online, privat, dan English camp — dirancang khusus agar
-              pemula bisa speaking dengan cara yang sederhana, praktis, dan
-              menyenangkan.
+              {description}
             </motion.p>
 
-            {/* CTA buttons */}
             <motion.div variants={item} className="flex flex-wrap gap-3 mb-10">
               <Link
-                href="/programs/lead/speaking-challenge"
+                href={primaryHref}
                 className="inline-flex items-center gap-2 font-bold text-base rounded-full px-8 py-4 transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
                 style={{
                   background: BRAND.gradientGold,
@@ -447,11 +505,11 @@ export default function HeroAnimated() {
                 >
                   <path d="M8 5v14l11-7z" />
                 </svg>
-                Mulai Speaking Challenge
+                {primaryLabel}
               </Link>
 
               <a
-                href="#programs"
+                href={secondaryHref}
                 className="inline-flex items-center font-bold text-base text-white rounded-full px-8 py-4 transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
                 style={{
                   background: BRAND.gradientNavy,
@@ -463,34 +521,17 @@ export default function HeroAnimated() {
                 onMouseEnter={() => setSecondaryHovered(true)}
                 onMouseLeave={() => setSecondaryHovered(false)}
               >
-                Lihat Semua Program
+                {secondaryLabel}
               </a>
             </motion.div>
 
-            {/* Social proof stats */}
             <motion.div
               variants={item}
               className="flex items-center gap-5 sm:gap-8 flex-wrap"
             >
-              {[
-                {
-                  value: `${SOCIAL_PROOF.activeStudents}+`,
-                  label: "Siswa Bergabung",
-                  color: BRAND.blue,
-                },
-                {
-                  value: "4.9★",
-                  label: "Rating Kepuasan",
-                  color: BRAND.blueVivid,
-                },
-                {
-                  value: "5+",
-                  label: "Tahun Pengalaman",
-                  color: BRAND.blueNavy,
-                },
-              ].map((stat, i) => (
+              {statLabels.map((stat, i) => (
                 <div
-                  key={stat.label}
+                  key={stat.key}
                   className="flex items-center gap-5 sm:gap-8"
                 >
                   {i > 0 && (
@@ -506,9 +547,12 @@ export default function HeroAnimated() {
                   <div>
                     <p
                       className="font-display font-bold leading-none mb-1"
-                      style={{ fontSize: "1.75rem", color: stat.color }}
+                      style={{
+                        fontSize: "1.75rem",
+                        color: statColors[i % statColors.length],
+                      }}
                     >
-                      {stat.value}
+                      {formatStat(stat.key, stats)}
                     </p>
                     <p className="text-sm" style={{ color: BRAND.textFaint }}>
                       {stat.label}
@@ -519,9 +563,6 @@ export default function HeroAnimated() {
             </motion.div>
           </motion.div>
 
-          {/* ──────────────────────────────────────────────────────────
-              RIGHT COLUMN — human image + floating UI layers
-          ────────────────────────────────────────────────────────── */}
           <motion.div
             style={{ y: reduced ? 0 : imageY }}
             className="relative hidden lg:flex justify-center items-center"
@@ -529,18 +570,12 @@ export default function HeroAnimated() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.9, delay: 0.25, ease }}
           >
-            {/*
-             * OUTER WRAPPER — gives a defined coordinate space for the
-             * absolutely-positioned floating elements
-             */}
             <div
               className="relative"
               style={{ width: "clamp(340px, 38vw, 480px)", aspectRatio: "4/5" }}
             >
-              {/* ── Soft radial glow ── */}
               <ImageGlow />
 
-              {/* ── Decorative ring ── */}
               <div
                 aria-hidden
                 className="absolute inset-0 rounded-full pointer-events-none"
@@ -553,10 +588,8 @@ export default function HeroAnimated() {
                 }}
               />
 
-              {/* ── Human image ── */}
               <motion.div
                 className="relative z-10 w-full h-full flex items-end justify-center"
-                // animate={reduced ? {} : { y: [0, -12, 0] }}
                 transition={{
                   repeat: Infinity,
                   duration: 5.5,
@@ -564,8 +597,8 @@ export default function HeroAnimated() {
                 }}
               >
                 <Image
-                  src="/images/categories/online-hero.png"
-                  alt="Siswa Inggris Go berbicara dengan percaya diri"
+                  src={imageUrl}
+                  alt={imageAlt}
                   fill
                   sizes="(max-width: 1024px) 0px, 38vw"
                   className="object-contain object-bottom"
@@ -576,27 +609,26 @@ export default function HeroAnimated() {
                 />
               </motion.div>
 
-              {/* ── Floating UI elements ── */}
-              <SpeechBubble reduced={reduced} />
-              <LiveBadge />
-              <ActiveStudentsBadge />
-              <ConversationCard />
+              <SpeechBubble floating={floating} />
+              <LiveBadge title={floating.liveTitle} />
+              <ActiveStudentsBadge
+                activeCount={stats.alumni}
+                text={floating.activeText}
+              />
+              <ConversationCard floating={floating} />
             </div>
           </motion.div>
 
-          {/* ── Mobile-only compact visual (below copy) ── */}
           <motion.div
             className="lg:hidden flex justify-center"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4, ease }}
           >
-            {/* Compact floating card for mobile */}
             <div
               className="w-full max-w-sm rounded-3xl p-6"
               style={{ background: BRAND.surface, boxShadow: BRAND.shadowCard }}
             >
-              {/* Live row */}
               <div className="flex items-center gap-3 mb-4">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -609,7 +641,7 @@ export default function HeroAnimated() {
                     className="font-bold text-sm"
                     style={{ color: BRAND.blueNavy }}
                   >
-                    Live Speaking Practice
+                    {floating.liveTitle}
                   </p>
                   <WaveformBars color={BRAND.blue} />
                 </div>
@@ -625,11 +657,10 @@ export default function HeroAnimated() {
                 </span>
               </div>
 
-              {/* Sample conversation */}
               <div className="space-y-2">
                 {[
-                  { text: "Hello! How are you today?", right: false },
-                  { text: "I'm fine, thank you!", right: true },
+                  { text: floating.chatMsg1, right: false },
+                  { text: floating.chatMsg2, right: true },
                 ].map((msg, i) => (
                   <div
                     key={i}

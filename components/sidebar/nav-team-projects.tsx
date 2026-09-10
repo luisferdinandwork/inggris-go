@@ -1,8 +1,7 @@
 // components/sidebar/nav-team-projects.tsx
 // Dynamic "Proyek" accordion for the sidebar — lists every draft/active
 // project (grouped by status), hides completed/archived ones, and links to
-// the projects list page. Distinct from nav-projects.tsx (the LMS "Program"
-// recent-items widget) despite the similar name.
+// the projects list page.
 "use client";
 
 import Link from "next/link";
@@ -38,7 +37,11 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { navIconClass, navItemClass } from "./nav-styles";
+import {
+  collapsedNavItemClass,
+  navIconClass,
+  navItemClass,
+} from "./nav-styles";
 import { trpc } from "@/lib/trpc/client";
 
 const STATUS_SECTIONS = [
@@ -92,17 +95,17 @@ function CollapsedNavTeamProjects({
   canCreate: boolean;
 }) {
   return (
-    <SidebarGroup className="px-2 py-0.5">
-      <SidebarMenu className="gap-0.5">
+    <SidebarGroup className="items-center px-1.5 py-2">
+      <SidebarMenu className="items-center gap-1">
         <SidebarMenuItem>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 tooltip="Proyek"
                 isActive={isActive}
-                className={`relative size-8 justify-center p-0 ${navItemClass(isActive)}`}
+                className={`relative ${collapsedNavItemClass(isActive)}`}
               >
-                <FolderKanban className={navIconClass(isActive)} />
+                <FolderKanban className="!size-[17px] shrink-0" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
 
@@ -230,7 +233,7 @@ export function NavTeamProjects({
   }
 
   return (
-    <SidebarGroup className="px-2 py-0.5">
+    <SidebarGroup className="px-2 py-2">
       <SidebarMenu className="gap-0.5">
         <Collapsible asChild defaultOpen={isActive} className="group/collapsible">
           <SidebarMenuItem>

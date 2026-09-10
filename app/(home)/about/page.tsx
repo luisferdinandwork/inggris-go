@@ -1,21 +1,27 @@
-"use client";
+import { HydrateClient, trpc } from "@/lib/trpc/server";
 
 import { HeroSection } from "@/components/sections/about/HeroSection";
 import { CompanySection } from "@/components/sections/about/CompanySection";
 import { VisionMissionSection } from "@/components/sections/about/VisionMissionSection";
-import { OrgSection } from "@/components/sections/about/OrgSection";
-import CtaSection from "@/components/sections/home/CTASection";
+import SharedCta from "@/components/sections/shared/SharedCta";
 
-const ease = [0.22, 1, 0.36, 1] as const;
+export const dynamic = "force-dynamic";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  await Promise.all([
+    trpc.siteContent.getAbout.prefetch(),
+    trpc.siteContent.getSiteStats.prefetch(),
+    trpc.siteContent.getCta.prefetch(),
+  ]);
+
   return (
-    <main className="min-h-screen bg-white">
-      <HeroSection></HeroSection>
-      <CompanySection></CompanySection>
-      <VisionMissionSection></VisionMissionSection>
-      {/* <OrgSection></OrgSection> */}
-      <CtaSection></CtaSection>
-    </main>
+    <HydrateClient>
+      <main className="min-h-screen bg-white">
+        <HeroSection />
+        <CompanySection />
+        <VisionMissionSection />
+        <SharedCta />
+      </main>
+    </HydrateClient>
   );
 }

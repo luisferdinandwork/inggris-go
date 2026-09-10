@@ -7,8 +7,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { navIconClass, navItemClass } from "./nav-styles";
+import { collapsedNavItemClass, navIconClass, navItemClass } from "./nav-styles";
 
 export type MainNavItem = {
   title: string;
@@ -18,9 +19,16 @@ export type MainNavItem = {
 };
 
 export function NavMain({ items }: { items: MainNavItem[] }) {
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   return (
-    <SidebarGroup className="px-2 pt-2 pb-0.5">
-      <SidebarMenu className="gap-0.5">
+    <SidebarGroup
+      className={
+        isCollapsed ? "items-center px-0 pt-2 pb-2" : "px-2 pt-2 pb-2"
+      }
+    >
+      <SidebarMenu className={isCollapsed ? "items-center gap-1" : "gap-0.5"}>
         {items.map((item) => {
           const Icon = item.icon ?? LayoutDashboard;
           return (
@@ -29,10 +37,20 @@ export function NavMain({ items }: { items: MainNavItem[] }) {
                 asChild
                 tooltip={item.title}
                 isActive={item.isActive}
-                className={navItemClass(item.isActive)}
+                className={
+                  isCollapsed
+                    ? collapsedNavItemClass(item.isActive)
+                    : navItemClass(item.isActive)
+                }
               >
                 <Link href={item.href}>
-                  <Icon className={navIconClass(item.isActive)} />
+                  <Icon
+                    className={
+                      isCollapsed
+                        ? "!size-[18px] shrink-0"
+                        : navIconClass(item.isActive)
+                    }
+                  />
                   <span>{item.title}</span>
                 </Link>
               </SidebarMenuButton>

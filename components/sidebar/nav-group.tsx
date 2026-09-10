@@ -26,8 +26,10 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import {
+  SECTION_LABEL_ACCENT_CLASS,
   SECTION_LABEL_CLASS,
   SECTION_LABEL_STYLE,
+  collapsedNavItemClass,
   navIconClass,
   navItemClass,
 } from "./nav-styles";
@@ -87,13 +89,13 @@ function CollapsedGroupItem({ item }: { item: GroupNavItem }) {
           asChild
           tooltip={item.title}
           isActive={item.isActive}
-          className={`relative size-8 justify-center p-0 ${navItemClass(item.isActive)}`}
+          className={`relative ${collapsedNavItemClass(item.isActive)}`}
         >
           <Link href={item.url ?? "#"}>
-            <Icon className={navIconClass(item.isActive)} />
+            <Icon className="!size-[17px] shrink-0" />
             {!!item.badge && (
               <span
-                className="absolute right-0.5 top-0.5 size-2 rounded-full"
+                className="absolute right-1 top-1 size-2 rounded-full ring-2 ring-white"
                 style={{ background: "var(--blue)" }}
               />
             )}
@@ -110,9 +112,9 @@ function CollapsedGroupItem({ item }: { item: GroupNavItem }) {
           <SidebarMenuButton
             tooltip={item.title}
             isActive={item.isActive}
-            className={`size-8 justify-center p-0 ${navItemClass(item.isActive)}`}
+            className={collapsedNavItemClass(item.isActive)}
           >
-            <Icon className={navIconClass(item.isActive)} />
+            <Icon className="!size-[17px] shrink-0" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -216,8 +218,8 @@ export function NavGroups({
   // ── COLLAPSED VIEW ───────────────────────────────────────
   if (isCollapsed) {
     return (
-      <SidebarGroup className="px-2 py-1">
-        <SidebarMenu className="gap-0.5 items-center">
+      <SidebarGroup className="items-center px-1.5 py-2" title={label}>
+        <SidebarMenu className="items-center gap-1">
           {items.map((item) => (
             <CollapsedGroupItem key={item.title} item={item} />
           ))}
@@ -228,9 +230,10 @@ export function NavGroups({
 
   // ── EXPANDED VIEW ────────────────────────────────────────
   return (
-    <SidebarGroup className="px-2 py-1.5">
+    <SidebarGroup className="px-2 py-2">
       {label && (
         <div className={SECTION_LABEL_CLASS} style={SECTION_LABEL_STYLE}>
+          <span className={SECTION_LABEL_ACCENT_CLASS} aria-hidden />
           {label}
         </div>
       )}

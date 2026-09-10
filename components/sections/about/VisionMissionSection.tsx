@@ -1,35 +1,45 @@
-// VisionMissionSection.tsx
+"use client";
+
 import Reveal from "@/components/ui/Reveal";
+import { trpc } from "@/lib/trpc/client";
 import { BRAND, GRADIENT_GOLD_TEXT } from "@/constants/brand";
 import { Eye, Target } from "lucide-react";
+import { DEFAULT_ABOUT } from "@/app/modules/site-content/site-content.defaults";
 
-const missions = [
-  {
-    num: "01",
-    text: "Menyediakan program belajar bahasa Inggris yang terjangkau, praktis, dan berdampak nyata.",
-  },
-  {
-    num: "02",
-    text: "Menciptakan lingkungan belajar yang mendorong peserta berbicara aktif sejak hari pertama.",
-  },
-  {
-    num: "03",
-    text: "Menghadirkan tutor berkualitas yang tidak hanya mengajar, tetapi menginspirasi.",
-  },
-  {
-    num: "04",
-    text: "Memperluas akses pendidikan bahasa Inggris berkualitas ke seluruh Indonesia.",
-  },
-];
+/** Renders `title` with the first occurrence of `accent` gold-highlighted. */
+function AccentTitle({ title, accent }: { title: string; accent: string }) {
+  if (!accent || !title.includes(accent)) return <>{title}</>;
+  const [before, ...rest] = title.split(accent);
+  return (
+    <>
+      {before}
+      <span style={GRADIENT_GOLD_TEXT}>{accent}</span>
+      {rest.join(accent)}
+    </>
+  );
+}
 
 export const VisionMissionSection = () => {
+  const { data } = trpc.siteContent.getAbout.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const c = data && data.isActive !== false ? data : DEFAULT_ABOUT;
+
+  const eyebrow = c.vmEyebrow || DEFAULT_ABOUT.vmEyebrow;
+  const title = c.vmTitle || DEFAULT_ABOUT.vmTitle;
+  const titleAccent = c.vmTitleAccent ?? DEFAULT_ABOUT.vmTitleAccent;
+  const visionBadge = c.visionBadge || DEFAULT_ABOUT.visionBadge;
+  const visionStatement = c.visionStatement || DEFAULT_ABOUT.visionStatement;
+  const visionStatementAccent =
+    c.visionStatementAccent ?? DEFAULT_ABOUT.visionStatementAccent;
+  const visionFooterNote =
+    c.visionFooterNote || DEFAULT_ABOUT.visionFooterNote;
+  const missions =
+    c.missions && c.missions.length > 0 ? c.missions : DEFAULT_ABOUT.missions;
+
   return (
-    <section
-      className="py-16 lg:py-24"
-      style={{ background: BRAND.background }}
-    >
+    <section className="py-16 lg:py-24" style={{ background: BRAND.background }}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-12">
-        {/* ── Header ── */}
         <Reveal className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 mb-4">
             <div
@@ -45,7 +55,7 @@ export const VisionMissionSection = () => {
                 color: "#94A3B8",
               }}
             >
-              Visi &amp; Misi
+              {eyebrow}
             </span>
           </div>
           <h2
@@ -56,14 +66,12 @@ export const VisionMissionSection = () => {
               color: BRAND.blueNavy,
             }}
           >
-            Arah &amp; <span style={GRADIENT_GOLD_TEXT}>Tujuan</span> Kami
+            <AccentTitle title={title} accent={titleAccent} />
           </h2>
         </Reveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-          {/* ══════════════════════════════════════════════
-           *  VISION CARD — dark navy, aspirational
-           * ══════════════════════════════════════════════ */}
+          {/* VISION */}
           <Reveal delay={0.05}>
             <div
               className="relative h-full rounded-3xl overflow-hidden flex flex-col group"
@@ -74,7 +82,6 @@ export const VisionMissionSection = () => {
                 minHeight: "360px",
               }}
             >
-              {/* Dot grid texture */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
@@ -83,8 +90,6 @@ export const VisionMissionSection = () => {
                   backgroundSize: "22px 22px",
                 }}
               />
-
-              {/* Glow — bottom right (gold) */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute"
@@ -99,8 +104,6 @@ export const VisionMissionSection = () => {
                   filter: "blur(32px)",
                 }}
               />
-
-              {/* Glow — top left (blue) */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute"
@@ -115,19 +118,6 @@ export const VisionMissionSection = () => {
                   filter: "blur(32px)",
                 }}
               />
-
-              {/* Shimmer sweep on hover */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                style={{
-                  background:
-                    "linear-gradient(120deg, transparent 25%, rgba(201,150,58,0.07) 50%, transparent 75%)",
-                  transform: "skewX(-8deg)",
-                }}
-              />
-
-              {/* Watermark */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute select-none"
@@ -146,7 +136,6 @@ export const VisionMissionSection = () => {
               </div>
 
               <div className="relative z-10 flex flex-col flex-1 p-8 lg:p-10">
-                {/* Icon + label row */}
                 <div className="flex items-center gap-3 mb-6">
                   <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -171,49 +160,46 @@ export const VisionMissionSection = () => {
                     </p>
                     <h3
                       className="font-display font-extrabold text-white"
-                      style={{
-                        fontSize: "1.125rem",
-                        letterSpacing: "-0.015em",
-                      }}
+                      style={{ fontSize: "1.125rem", letterSpacing: "-0.015em" }}
                     >
                       Our Vision
                     </h3>
                   </div>
                 </div>
 
-                {/* Gold pill badge */}
-                <div
-                  className="inline-flex items-center gap-2 mb-6 self-start"
-                  style={{
-                    background: "rgba(201,150,58,0.1)",
-                    border: "1px solid rgba(201,150,58,0.25)",
-                    borderRadius: "100px",
-                    padding: "5px 14px",
-                  }}
-                >
+                {visionBadge && (
                   <div
+                    className="inline-flex items-center gap-2 mb-6 self-start"
                     style={{
-                      width: "5px",
-                      height: "5px",
-                      borderRadius: "50%",
-                      background: BRAND.goldVivid,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    className="font-display font-bold"
-                    style={{
-                      fontSize: "0.6875rem",
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      color: BRAND.goldVivid,
+                      background: "rgba(201,150,58,0.1)",
+                      border: "1px solid rgba(201,150,58,0.25)",
+                      borderRadius: "100px",
+                      padding: "5px 14px",
                     }}
                   >
-                    Inggris Go · Est. 2022
-                  </span>
-                </div>
+                    <div
+                      style={{
+                        width: "5px",
+                        height: "5px",
+                        borderRadius: "50%",
+                        background: BRAND.goldVivid,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      className="font-display font-bold"
+                      style={{
+                        fontSize: "0.6875rem",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        color: BRAND.goldVivid,
+                      }}
+                    >
+                      {visionBadge}
+                    </span>
+                  </div>
+                )}
 
-                {/* Vision statement */}
                 <p
                   className="font-display font-bold flex-1"
                   style={{
@@ -223,16 +209,15 @@ export const VisionMissionSection = () => {
                     marginBottom: "28px",
                   }}
                 >
-                  Menjadi platform pembelajaran bahasa Inggris terdepan yang
-                  melahirkan generasi Indonesia yang percaya diri berkomunikasi
-                  secara global —
-                  <span style={GRADIENT_GOLD_TEXT}>
-                    {" "}
-                    tanpa rasa takut, tanpa hambatan.
-                  </span>
+                  {visionStatement}
+                  {visionStatementAccent && (
+                    <span style={GRADIENT_GOLD_TEXT}>
+                      {" "}
+                      {visionStatementAccent}
+                    </span>
+                  )}
                 </p>
 
-                {/* Footer accent */}
                 <div
                   className="flex items-center gap-3"
                   style={{
@@ -256,16 +241,14 @@ export const VisionMissionSection = () => {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    Membangun Indonesia yang berbicara dunia
+                    {visionFooterNote}
                   </p>
                 </div>
               </div>
             </div>
           </Reveal>
 
-          {/* ══════════════════════════════════════════════
-           *  MISSION CARD — white surface, navy header
-           * ══════════════════════════════════════════════ */}
+          {/* MISSION */}
           <Reveal delay={0.1}>
             <div
               className="h-full rounded-3xl overflow-hidden flex flex-col"
@@ -275,7 +258,6 @@ export const VisionMissionSection = () => {
                 boxShadow: "0 8px 40px rgba(26,58,110,0.07)",
               }}
             >
-              {/* Navy header strip */}
               <div
                 className="px-8 py-5 lg:px-10 flex items-center gap-3 flex-shrink-0"
                 style={{
@@ -312,7 +294,6 @@ export const VisionMissionSection = () => {
                 </div>
               </div>
 
-              {/* Mission items */}
               <ul className="flex-1 flex flex-col">
                 {missions.map((m, i) => (
                   <li
@@ -324,16 +305,7 @@ export const VisionMissionSection = () => {
                           ? `1px solid rgba(26,58,110,0.07)`
                           : "none",
                     }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLLIElement).style.background =
-                        "rgba(26,58,110,0.03)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLLIElement).style.background =
-                        "transparent";
-                    }}
                   >
-                    {/* Number */}
                     <span
                       className="font-display font-extrabold flex-shrink-0"
                       style={{
@@ -348,7 +320,6 @@ export const VisionMissionSection = () => {
                       {m.num}
                     </span>
 
-                    {/* Accent bar — navy gradient */}
                     <div
                       className="flex-shrink-0"
                       style={{
@@ -379,3 +350,5 @@ export const VisionMissionSection = () => {
     </section>
   );
 };
+
+export default VisionMissionSection;

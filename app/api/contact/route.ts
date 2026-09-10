@@ -7,8 +7,8 @@ import {
 } from "@/app/server/api/email/contact";
 import { NextRequest, NextResponse } from "next/server";
 import { getResend } from "@/lib/resend";
+import { getContactRecipientEmail } from "@/app/modules/site-content/server/site-content.service";
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "support@inggrisgo.com";
 const FROM_EMAIL = process.env.FROM_EMAIL ?? "noreply@inggrisgo.com";
 const FROM_NAME = "InggrisGo";
 
@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
 
     // Create the Resend client at request time (not module load — keeps build safe).
     const resend = getResend();
+
+    // Recipient is configurable from the Contact CMS (DB → env → default).
+    const ADMIN_EMAIL = await getContactRecipientEmail();
 
     const data = body as ContactBody;
     const categoryLabel = data.category
